@@ -68,13 +68,13 @@ class GoRouterAdapter extends ContextAwareAdapter {
 }
 
 class MyFeatureReactor {
-  MyFeatureReactor(super.router);
+  MyFeatureReactor(this.router);
   
   final GoRouterAdapter router;
 
   // Navigate
   void goToDetails(String id) {
-    tryRun((context) => context.go('/details/$id')); 
+    router.go('/details/$id'); 
   }
 }
 

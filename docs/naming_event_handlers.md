@@ -49,7 +49,7 @@ To achieve consistency, use this simple formula for your Hako methods:
 | **Stateless Command** | **Interaction Noun** | Buttons, Icons, FABs. The user is saying "Do this." | `onAddTap` `onSaveTap` `onArchiveSwipe`                   |
 | **Value Update** | **Past-Tense Verb** | Text Fields, Sliders. The user is modifying data. | `onQueryChanged` `onVolumeChanged` `onNameChanged`        |
 | **Selection / Switch** | **Past-Tense Verb** | Lists, Checkboxes, Switches. The user picks or flips an option. | `onFilterToggled` `onAlbumSelected` `onSortOrderSelected` |
-| **Lifecycle Event** | **Lifecycle Verb** | System Triggered. When the View is created, resumed, or destroyed. | `onInit` `onDispose` `onResume`                           |
+| **Lifecycle Event** | **Lifecycle Verb** | System Triggered. When the View is created, resumed, or destroyed. | `onReady` `onDispose` `onResume`                           |
 
 
 #### Examples:

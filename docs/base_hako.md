@@ -31,7 +31,7 @@ Kondo takes this raw, unopinionated container and supercharges it to enforce the
 Rather than extending `Hako` directly, you extend one of the specific **`KondoHako`** variants. These variants inject your feature's specific architectural layers, giving the Hako secure, immediate access to business logic and side effects without performing unsafe global lookups.
 
 **The Kondo Variants:**
-*   **`KondoHako`**: The base class. It offers automatic lifecycle hooks (like `onInit()`) and safe stream management, perfect for simple UI features with no heavy business logic.
+*   **`KondoHako`**: The base class. It offers automatic lifecycle hooks (like `onReady()`) and safe stream management, perfect for simple UI features with no heavy business logic.
 *   **`IKondoHako<I>`**: Injects an **Interactor** (`interactor`). Use this when your feature needs pure business logic, calculations, or data fetching, but doesn't require complex routing side effects.
 *   **`RKondoHako<R>`**: Injects a **Reactor** (`reactor`). Use this when your feature needs to launch dialogs or trigger navigation, but doesn't have complex data logic.
 *   **`IRKondoHako<I, R>`**: The comprehensive variant. It injects both the **Interactor** and **Reactor**. This is the most feature-complete variant and forms the full Kondo Triad for complex screens.

@@ -52,7 +52,7 @@ The **Interactor** is the domain expert. It contains your application's pure bus
   specific UI implementations.
 * Typical Responsibilities:
     - Business logic and data transformations
-    - Communication with repositories and services
+    - Communication with repositories and services (data layer)
     - Data validation and processing
     - Providing streams for reactive data sources
 
@@ -216,6 +216,7 @@ The brain of the operation. It holds no state and knows nothing about Flutter wi
 ```dart
 class CounterInteractor {
   CounterInteractor(this.analyticsService);
+  
   final AnalyticsService analyticsService;
 
   // Business logic is pure
@@ -242,7 +243,7 @@ The boundary to UI side effects. We don't want to capture raw `BuildContext` ins
 class CounterReactor {
   CounterReactor({required this.showLimitDialog});
   
-  // We use a lazy closure
+  // We use a lazy closure for simplicity
   final Future<void> Function() showLimitDialog;
 }
 ```
@@ -529,7 +530,9 @@ Once you are comfortable with the canonical flow mapping of the Triad above, div
 
 *   🧠 **[The Base Interactor](docs/base_interactor.md)** - Handling streams, avoiding UI dependencies, and differentiating App State vs Feature State.
 *   ⚡ **[The Base Reactor](docs/base_reactor.md)** - Deep dive into Context-Aware Adapters and natively shielding against `Deactivated Widget` crashes.
+*   🛡️ **[Context-Aware Adapters](docs/context_aware_adapters.md)** - Understanding Composition vs Inheritance for pure UI testability.
 *   🧩 **[Internal State Structure](docs/internal_state_structure.md)** - When to use "Smart Wrappers" vs strictly mapping "Pure Data" structures.
 *   📝 **[Structuring State](docs/structuring_state.md)** - The critical rules of Semantic Sectioning and why string-labels for state lookup are a total anti-pattern.
+*   🏠 **[State Ownership](docs/state_ownership.md)** - Deciding whether state belongs in a Repository, an Ancestor Hako, or a Leaf Hako based on scope in the widget tree.
 *   🏷️ **[Naming Event Handlers](docs/naming_event_handlers.md)** - The mandatory `on+[Subject]+[Trigger]` scheme allowing codebases to remain perfectly agnostic to widget changes.
-*   🎯 **[Testing Your Triad](docs/testing_guide.md)** - The guide outlining `kondo_test` dependency logic, stream orchestration assertions, and Triad boundary mocking.
+*   🎯 **[Testing Your Triad](notes_to_review/testing_guide.md)** - The guide outlining `kondo_test` dependency logic, stream orchestration assertions, and Triad boundary mocking.

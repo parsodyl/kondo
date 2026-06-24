@@ -69,7 +69,7 @@ abstract class KondoHako extends BaseHako {
   /// This method is automatically called by [KondoProvider] after the first
   /// frame is rendered, ensuring the widget tree is ready before any
   /// initialization logic runs.
-  FutureOr<void> onInit() {}
+  FutureOr<void> onReady() {}
 
   /// Connects a stream to the Hako's state management.
   ///
@@ -79,7 +79,7 @@ abstract class KondoHako extends BaseHako {
   /// disposed.
   ///
   /// The ideal place to call this method is in the Hako's constructor for
-  /// immediate subscription, or in [onInit] if you want to ensure the first
+  /// immediate subscription, or in [onReady] if you want to ensure the first
   /// frame is rendered before starting the subscription.
   ///
   /// Note: the subscription cannot be canceled before the Hako is disposed.
@@ -118,7 +118,7 @@ abstract class KondoHako extends BaseHako {
   /// will be automatically cancelled when the Hako is disposed.
   ///
   /// The ideal place to call this method is in the Hako's constructor for
-  /// immediate subscription, or in [onInit] if you want to ensure the first
+  /// immediate subscription, or in [onReady] if you want to ensure the first
   /// frame is rendered before starting the subscription.
   ///
   /// Note: the subscription cannot be canceled before the Hako is disposed.
@@ -176,7 +176,7 @@ abstract class KondoHako extends BaseHako {
 ///   });
 ///
 ///   @override
-///   FutureOr<void> onInit() async {
+///   FutureOr<void> onReady() async {
 ///     final data = await interactor.fetchData();
 ///     set<MyState>((current) => current.copyWith(data: data));
 ///   }
