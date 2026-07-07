@@ -290,8 +290,10 @@ extension CounterHakoContextExtension on BuildContext {
 }
 ```
 
+> **Note:** Kondo provides several Hako variants depending on your feature's complexity: `KondoHako` (no dependencies), `IKondoHako<I>` (Interactor only), `RKondoHako<R>` (Reactor only), and `IRKondoHako<I, R>` (full Triad). Here we use the most comprehensive variant. For simpler features that don't need business logic or side effects, the lighter variants avoid unnecessary boilerplate.
+
 ### Step 5: The View
-Finally, map the architecture cleanly onto the widget tree using `KondoProvider`.
+Finally, map the architecture cleanly onto the widget tree using `KondoProvider`. It creates your Hako, provides it to all descendant widgets, and manages its full lifecycle—including automatic stream disposal when the feature is removed from the tree.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -393,7 +395,7 @@ void main() {
 
 ## Safe Side-Effects with ContextAwareAdapter 🛡️
 
-What happens when your Interactor executes a long-running asynchronous operation and attempts to trigger a UI action afterwards? If your Reactor inevitably tries to show a dialog using an old inline `BuildContext` closure, your Flutter app will crash violently with a `Deactivated Widget` error. 
+What happens when your Interactor executes a long-running asynchronous operation and attempts to trigger a UI action afterwards? If the user has navigated away in the meantime, the `BuildContext` is no longer valid and the Reactor's attempt to show a dialog or navigate will throw a `Deactivated Widget` error.
 
 To solve this in a professionally decoupled, scalable way, Kondo introduces the `ContextAwareAdapter`. Instead of manually checking `if (!context.mounted)` everywhere, you construct reusable, memory-safe UI launchers.
 
@@ -535,4 +537,3 @@ Once you are comfortable with the canonical flow mapping of the Triad above, div
 *   📝 **[Structuring State](docs/structuring_state.md)** - The critical rules of Semantic Sectioning and why string-labels for state lookup are a total anti-pattern.
 *   🏠 **[State Ownership](docs/state_ownership.md)** - Deciding whether state belongs in a Repository, an Ancestor Hako, or a Leaf Hako based on scope in the widget tree.
 *   🏷️ **[Naming Event Handlers](docs/naming_event_handlers.md)** - The mandatory `on+[Subject]+[Trigger]` scheme allowing codebases to remain perfectly agnostic to widget changes.
-*   🎯 **[Testing Your Triad](notes_to_review/testing_guide.md)** - The guide outlining `kondo_test` dependency logic, stream orchestration assertions, and Triad boundary mocking.
