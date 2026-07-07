@@ -28,19 +28,20 @@ abstract class KondoHakoEvent extends HakoEvent {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is KondoHakoEvent && runtimeType == other.runtimeType;
+      other is KondoHakoEvent && runtimeType == other.runtimeType;
 
   @override
   int get hashCode => runtimeType.hashCode;
 }
 
-/// Represents an event triggered by an interactor.
+/// Represents an event emitted when the [interactor] getter is accessed
+/// on a [KondoHako] variant.
 ///
-/// Interactor events are typically dispatched when an interactor component
-/// performs an action or operation within the Kondo architecture.
+/// These events are dispatched automatically for debugging and tracking
+/// purposes each time a Hako reads its Interactor.
 ///
-/// This event can be constructed with or without a label using the default
-/// constructor or [InteractorEvent.withLabel] respectively.
+/// Use the default constructor for unlabeled events, or
+/// [InteractorEvent.withLabel] to attach a descriptive label.
 class InteractorEvent extends KondoHakoEvent {
   /// Constructs an [InteractorEvent] without a label.
   const InteractorEvent();
@@ -57,14 +58,14 @@ class InteractorEvent extends KondoHakoEvent {
   }
 }
 
-/// Represents an event triggered by a reactor.
+/// Represents an event emitted when the [reactor] getter is accessed
+/// on a [KondoHako] variant.
 ///
-/// Reactor events are typically dispatched when a reactor component
-/// responds to state changes or performs side effects within the Kondo
-/// architecture.
+/// These events are dispatched automatically for debugging and tracking
+/// purposes each time a Hako reads its Reactor.
 ///
-/// This event can be constructed with or without a label using the default
-/// constructor or [ReactorEvent.withLabel] respectively.
+/// Use the default constructor for unlabeled events, or
+/// [ReactorEvent.withLabel] to attach a descriptive label.
 class ReactorEvent extends KondoHakoEvent {
   /// Constructs a [ReactorEvent] without a label.
   const ReactorEvent();

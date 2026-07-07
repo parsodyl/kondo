@@ -12,9 +12,8 @@ import 'kondo_hako_events.dart';
 /// These variants provide the architectural foundation and lifecycle hooks
 /// specific to the Kondo pattern.
 ///
-/// This is the basic version of KondoHako that does not require an Interactor
-/// or Reactor. It provides the foundation for simple state containers that
-/// need only state management without additional architectural layers.
+/// It provides the foundation for simple state containers that need only
+/// state management without additional architectural layers.
 ///
 /// **KondoHako** serves as the orchestrator in the Kondo architecture. It:
 /// * Holds and manages UI state
@@ -35,13 +34,13 @@ import 'kondo_hako_events.dart';
 /// Example:
 /// ```dart
 /// class MyHako extends KondoHako {
-///   MyHako() {
+///   MyHako() : super((register) {
 ///     register<MyState>(const MyState(isVisible: false));
-///   }
+///   });
 ///
 ///   void onVisibilityToggled() {
 ///     set<MyState>(
-///       (current) => current.copyWith(isVisible: !current.isVisible,
+///       (current) => current.copyWith(isVisible: !current.isVisible),
 ///     );
 ///   }
 /// }
@@ -49,14 +48,22 @@ import 'kondo_hako_events.dart';
 abstract class KondoHako extends BaseHako {
   /// Constructs a [KondoHako].
   ///
-  /// Parameters:
-  /// * [registrar] - The Hako registrar for state management
+  /// The positional argument is a [StateRegistrar] callback used to register
+  /// initial state objects:
+  ///
+  /// ```dart
+  /// MyHako() : super((register) {
+  ///   register<CounterState>(const CounterState(0));
+  /// });
+  /// ```
   KondoHako(super.registrar);
 
   final _subscriptions = <StreamSubscription<dynamic>>[];
 
-  void _cancelAllSubscriptions() async {
-    await Future.wait<void>(_subscriptions.map((s) => s.cancel()));
+  void _cancelAllSubscriptions() {
+    for (final subscription in _subscriptions) {
+      subscription.cancel();
+    }
     _subscriptions.clear();
   }
 
@@ -82,15 +89,9 @@ abstract class KondoHako extends BaseHako {
   /// immediate subscription, or in [onReady] if you want to ensure the first
   /// frame is rendered before starting the subscription.
   ///
-  /// Note: the subscription cannot be canceled before the Hako is disposed.
-  ///
-  /// Parameters:
-  /// * [stream] - The stream to subscribe to
-  /// * [onEvent] - Optional transformer to merge the stream event with current
-  /// state
-  /// * [onError] - Optional error handler
-  /// * [onDone] - Optional callback when the stream completes
-  /// * [name] - Optional name for the state
+  /// By design, individual subscriptions cannot be canceled independently —
+  /// all stream lifecycle management is unified and handled internally when
+  /// the Hako is disposed.
   void connectStream<T>({
     required Stream<T> stream,
     T Function(T current, T event)? onEvent,
@@ -121,13 +122,9 @@ abstract class KondoHako extends BaseHako {
   /// immediate subscription, or in [onReady] if you want to ensure the first
   /// frame is rendered before starting the subscription.
   ///
-  /// Note: the subscription cannot be canceled before the Hako is disposed.
-  ///
-  /// Parameters:
-  /// * [stream] - The stream to subscribe to
-  /// * [onData] - Callback invoked with each stream event
-  /// * [onError] - Optional error handler
-  /// * [onDone] - Optional callback when the stream completes
+  /// By design, individual subscriptions cannot be canceled independently —
+  /// all stream lifecycle management is unified and handled internally when
+  /// the Hako is disposed.
   void listenStream<T>({
     required Stream<T> stream,
     required void Function(T event) onData,
@@ -183,11 +180,7 @@ abstract class KondoHako extends BaseHako {
 /// }
 /// ```
 abstract class IKondoHako<I> extends KondoHako with _InteractorGetterMixin<I> {
-  /// Constructs an [IKondoHako] with the specified [interactor].
-  ///
-  /// Parameters:
-  /// * [registrar] - The Hako registrar for state management
-  /// * [interactor] - The Interactor instance for business logic
+  /// Constructs an [IKondoHako] with the required [interactor].
   IKondoHako(
     super.registrar, {
     required I interactor,
@@ -226,11 +219,7 @@ abstract class IKondoHako<I> extends KondoHako with _InteractorGetterMixin<I> {
 /// }
 /// ```
 abstract class RKondoHako<R> extends KondoHako with _ReactorGetterMixin<R> {
-  /// Constructs an [RKondoHako] with the specified [reactor].
-  ///
-  /// Parameters:
-  /// * [registrar] - The Hako registrar for state management
-  /// * [reactor] - The Reactor instance for side effects
+  /// Constructs an [RKondoHako] with the required [reactor].
   RKondoHako(
     super.registrar, {
     required R reactor,
@@ -282,12 +271,7 @@ abstract class RKondoHako<R> extends KondoHako with _ReactorGetterMixin<R> {
 /// ```
 abstract class IRKondoHako<I, R> extends KondoHako
     with _InteractorGetterMixin<I>, _ReactorGetterMixin<R> {
-  /// Constructs an [IRKondoHako] with the specified [interactor] and [reactor].
-  ///
-  /// Parameters:
-  /// * [registrar] - The Hako registrar for state management
-  /// * [interactor] - The Interactor instance for business logic
-  /// * [reactor] - The Reactor instance for side effects
+  /// Constructs an [IRKondoHako] with the required [interactor] and [reactor].
   IRKondoHako(
     super.registrar, {
     required I interactor,

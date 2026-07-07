@@ -18,10 +18,8 @@ typedef CreateHako<H extends KondoHako> = H Function(BuildContext context);
 /// [KondoProvider], allowing custom orchestration logic to be executed
 /// after the Hako is created and the view is fully mounted (post-frame).
 ///
-/// Parameters:
-/// * [hako] - The [KondoHako] instance to trigger
-///
-/// Returns a [FutureOr] to support both synchronous and asynchronous logic.
+/// The [hako] parameter is the fully created instance, ready for
+/// initialization.
 typedef OnKondoReady<H extends KondoHako> = FutureOr<void> Function(H hako);
 
 /// A Provider widget that provides a [KondoHako] instance to its descendants
@@ -102,24 +100,13 @@ class KondoProvider<H extends KondoHako> extends HakoProvider<H> {
     super.key,
   }) : super.value();
 
-  /// Creates a new [KondoProvider] that creates and provides a [KondoHako]
+  /// Creates a [KondoProvider] that creates and provides a [KondoHako]
   /// instance to its descendants.
   ///
   /// The [createHako] factory function is called to instantiate the Hako.
   /// If [skipReady] is `false` (the default), the Hako's [KondoHako.onReady]
   /// method will be automatically called after the first frame is rendered,
   /// unless a custom [onReady] callback is provided.
-  ///
-  /// Parameters:
-  /// * [createHako] - A factory function that creates the [KondoHako] instance.
-  /// * [builder] - Optional widget builder function.
-  /// * [onReady] - Optional custom ready callback. If provided, this
-  ///   will be called instead of the Hako's default [KondoHako.onReady] method.
-  /// * [skipReady] - If `true`, skips the orchestration phase
-  ///   entirely. Neither [onReady] nor [KondoHako.onReady] will be called.
-  ///   Defaults to `false`.
-  /// * [lazy] - Whether to create the [KondoHako] instance lazily. Defaults to `true`.
-  /// * [key] - An optional [Key] to use for this widget.
   factory KondoProvider({
     required CreateHako<H> createHako,
     WidgetBuilder? builder,
@@ -139,7 +126,7 @@ class KondoProvider<H extends KondoHako> extends HakoProvider<H> {
                 : null,
       );
 
-  /// Creates a new [KondoProvider] that provides an existing [KondoHako].
+  /// Provides an existing [KondoHako] instance to descendant widgets.
   factory KondoProvider.value({
     required H value,
     WidgetBuilder? builder,

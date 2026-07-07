@@ -15,7 +15,7 @@ import 'package:flutter/widgets.dart';
 ///
 /// ```dart
 /// class PageNavigator extends ContextAwareAdapter {
-///   PageNavigator(super.contextResolver);
+///   PageNavigator({required super.contextResolver});
 ///
 ///   void pop() => tryRun((context) => Navigator.of(context).pop());
 /// }
@@ -51,8 +51,10 @@ abstract class ContextAwareAdapter {
   /// ```dart
   /// final theme = getFromContext((c) => Theme.of(c));
   /// ```
-  T? getFromContext<T>(T? Function(BuildContext context) getter) =>
-      maybeContext != null ? getter(maybeContext!) : null;
+  T? getFromContext<T>(T? Function(BuildContext context) getter) {
+    final context = maybeContext;
+    return context != null ? getter(context) : null;
+  }
 
   /// Safely executes an action using the context (e.g., Navigation, Dialogs).
   ///
@@ -68,6 +70,8 @@ abstract class ContextAwareAdapter {
   /// // Async (Dialog)
   /// await tryRun((c) => showDialog(context: c, ...));
   /// ```
-  FutureOr<R?> tryRun<R>(FutureOr<R?> Function(BuildContext context) action) =>
-      maybeContext != null ? action(maybeContext!) : null;
+  FutureOr<R?> tryRun<R>(FutureOr<R?> Function(BuildContext context) action) {
+    final context = maybeContext;
+    return context != null ? action(context) : null;
+  }
 }

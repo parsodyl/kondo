@@ -48,9 +48,6 @@ abstract interface class KondoDependencyResolver {
   /// This method is called automatically when the [KondoDependencyProvider]
   /// is disposed. Implementations should release any resources, close streams,
   /// and dispose of objects that require cleanup.
-  ///
-  /// Returns a [Future] or completes synchronously depending on the
-  /// implementation's cleanup requirements.
   FutureOr<void> dismantle();
 }
 
@@ -134,7 +131,7 @@ class KondoDependencyProvider extends Provider<KondoDependencyResolver> {
   /// Example:
   /// ```dart
   /// final resolver = MyResolver();
-  /// 
+  ///
   /// KondoDependencyProvider.value(
   ///   value: resolver,
   ///   child: MyWidget(),
