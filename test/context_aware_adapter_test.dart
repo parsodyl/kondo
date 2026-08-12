@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kondo/kondo.dart';
@@ -132,6 +133,58 @@ void main() {
         return 'async done';
       });
       expect(result, 'async done');
+    });
+  });
+
+  group('tryRunAsync', () {
+    testWidgets('provides access to mounted context after await',
+        (tester) async {
+      late BuildContext capturedContext;
+      await tester.pumpWidget(
+        Builder(builder: (context) {
+          capturedContext = context;
+          return const SizedBox();
+        }),
+      );
+
+      final adapter = TestAdapter(contextResolver: () => capturedContext);
+      
+      final result = await adapter.tryRunAsync<String>((getContext) async {
+        expect(getContext(), isNotNull);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(getContext(), isNotNull);
+        return 'done';
+      });
+      
+      expect(result, 'done');
+    });
+
+    testWidgets('returns null from getContext if unmounted during await',
+        (tester) async {
+      late BuildContext capturedContext;
+      await tester.pumpWidget(
+        Builder(builder: (context) {
+          capturedContext = context;
+          return const SizedBox();
+        }),
+      );
+
+      final adapter = TestAdapter(contextResolver: () => capturedContext);
+      
+      final completer = Completer<void>();
+      final future = adapter.tryRunAsync<String>((getContext) async {
+        expect(getContext(), isNotNull);
+        await completer.future;
+        expect(getContext(), isNull);
+        return 'done';
+      });
+      
+      // Unmount the widget while the async task is waiting
+      await tester.pumpWidget(const SizedBox());
+      completer.complete();
+      
+      final result = await future;
+      expect(result, 'done');
     });
   });
 }

@@ -74,4 +74,25 @@ abstract class ContextAwareAdapter {
     final context = maybeContext;
     return context != null ? action(context) : null;
   }
+
+  /// Safely executes an asynchronous action, providing a safe context accessor.
+  ///
+  /// Use this when your action contains `await` gaps, during which the widget
+  /// might be unmounted. The `getContext` callback will return the
+  /// [BuildContext] if it's still mounted, or `null` if it has been unmounted.
+  ///
+  /// ```dart
+  /// await tryRunAsync((getContext) async {
+  ///   await Future.delayed(Duration(seconds: 1));
+  ///   final context = getContext();
+  ///   if (context != null) {
+  ///     Navigator.of(context).pop();
+  ///   }
+  /// });
+  /// ```
+  Future<R?> tryRunAsync<R>(
+    Future<R?> Function(BuildContext? Function() getContext) action,
+  ) {
+    return action(() => maybeContext);
+  }
 }

@@ -345,6 +345,8 @@ class CounterPage extends StatelessWidget {
 }
 ```
 
+> **Note:** The full, runnable source code for this example is available in the [`example/lib/main.dart`](example/lib/main.dart) file of this repository.
+
 ---
 
 ## Dependency Injection Management 💉
