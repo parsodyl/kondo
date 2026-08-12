@@ -137,9 +137,6 @@ class MyDependencyResolver implements KondoDependencyResolver {
     if (T == AnalyticsService) {
       return _analyticsService as T;
     }
-    if (T == CounterInteractor) {
-      return CounterInteractor(_analyticsService) as T;
-    }
     throw Exception('Dependency not found');
   }
 
@@ -176,7 +173,10 @@ class CounterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return KondoProvider<CounterHako>(
       createHako: (context) => CounterHako(
-        interactor: context.resolveDependency<CounterInteractor>(),
+        interactor: CounterInteractor(
+          // Dependency Injection
+          context.resolveDependency<AnalyticsService>(),
+        ),
         reactor: CounterReactor(
           // Safely passing the Context through a robust lazy loader!
           dialogLauncher:

@@ -532,10 +532,11 @@ With these helpers, your UI automatically mirrors your database in real-time wit
 
 Once you are comfortable with the canonical flow mapping of the Triad above, dive into our Advanced Concept guides. These rulebooks were built to ensure your Kondo implementations never degrade into massive, fragile state monoliths.
 
-*   🧠 **[The Base Interactor](docs/base_interactor.md)** - Handling streams, avoiding UI dependencies, and differentiating App State vs Feature State.
-*   ⚡ **[The Base Reactor](docs/base_reactor.md)** - Deep dive into Context-Aware Adapters and natively shielding against `Deactivated Widget` crashes.
-*   🛡️ **[Context-Aware Adapters](docs/context_aware_adapters.md)** - Understanding Composition vs Inheritance for pure UI testability.
-*   🧩 **[Internal State Structure](docs/internal_state_structure.md)** - When to use "Smart Wrappers" vs strictly mapping "Pure Data" structures.
-*   📝 **[Structuring State](docs/structuring_state.md)** - The critical rules of Semantic Sectioning and why string-labels for state lookup are a total anti-pattern.
-*   🏠 **[State Ownership](docs/state_ownership.md)** - Deciding whether state belongs in a Repository, an Ancestor Hako, or a Leaf Hako based on scope in the widget tree.
+*   📦 **[The Base Hako](docs/base_hako.md)** - Core state binder, UI orchestrator, and granular rebuilding mechanics.
 *   🏷️ **[Naming Event Handlers](docs/naming_event_handlers.md)** - The mandatory `on+[Subject]+[Trigger]` scheme allowing codebases to remain perfectly agnostic to widget changes.
+*   📝 **[Structuring State](docs/structuring_state.md)** - The critical rules of Semantic Sectioning and why string-labels for state lookup are a total anti-pattern.
+*   🧩 **[Internal State Structure](docs/internal_state_structure.md)** - When to use "Smart Wrappers" vs strictly mapping "Pure Data" structures.
+*   🧠 **[The Base Interactor](docs/base_interactor.md)** - Handling streams, avoiding UI dependencies, and differentiating App State vs Feature State.
+*   ⚡  **[The Base Reactor](docs/base_reactor.md)** - Deep dive into Context-Aware Adapters and natively shielding against `Deactivated Widget` crashes.
+*   🏠 **[State Ownership](docs/state_ownership.md)** - Deciding whether state belongs in a Repository, an Ancestor Hako, or a Leaf Hako based on scope in the widget tree.
+*   🛡️ **[Context-Aware Adapters](docs/context_aware_adapters.md)** - Understanding Composition vs Inheritance for pure UI testability.

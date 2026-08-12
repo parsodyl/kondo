@@ -45,6 +45,7 @@ class MyFeatureHako extends IRKondoHako<MyFeatureInteractor, MyFeatureReactor> {
   }) : super((register) {
          // Granular initial state setup happens here
          register(const HeaderState());
+         register(const ListState());
        });
 }
 ```
