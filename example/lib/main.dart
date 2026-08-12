@@ -5,6 +5,7 @@ import 'package:kondo/kondo.dart';
 
 class AnalyticsService {
   Future<void> logEvent(String name, Map<String, dynamic> parameters) async {
+    // Simulate network delay so the loading indicator is visible
     await Future<void>.delayed(const Duration(milliseconds: 250));
     debugPrint('Analytics: $name $parameters');
   }
@@ -20,28 +21,42 @@ class CounterSectionState {
 
 // --- Interactor ---
 
+/// The brain of the operation. It holds no state and knows nothing about Flutter widgets.
+/// It just computes data or talks to external Services/Repositories.
 class CounterInteractor {
   CounterInteractor(this.analyticsService);
 
   final AnalyticsService analyticsService;
 
+  // Business logic is pure
   Future<int> increment(int currentCount) async {
+    // 1. Business logic happens here!
     final newCount = currentCount + 1;
+
+    // 2. Side-operations (like logging) are transparent
     await analyticsService.logEvent('counter_incremented', {'count': newCount});
+
+    // 3. Return 'Ready to consume' feature data
     return newCount;
   }
 
+  // Domain rules dictate boundaries
   bool isLimitReached(int count) => count >= 10;
 }
 
 // --- Reactor & ContextAwareAdapter ---
 
+/// Reusable, memory-safe launcher extending [ContextAwareAdapter] to safely wrap
+/// actions like `showDialog` or `Navigator.push`.
 class ContextAwareDialogLauncher extends ContextAwareAdapter {
   ContextAwareDialogLauncher({required super.contextResolver});
 
+  // We use `String Function(BuildContext)` callbacks so text can be translated
+  // seamlessly at the exact moment the dialog triggers!
   Future<void> launchInfoDialog({
     required String Function(BuildContext context) title,
   }) async {
+    // tryRunAsync strictly guarantees the interior closure only executes if the widget is still mounted
     await tryRunAsync((getContext) async {
       final context = getContext();
       if (context != null) {
@@ -54,6 +69,8 @@ class ContextAwareDialogLauncher extends ContextAwareAdapter {
   }
 }
 
+/// The boundary to UI side effects. We don't capture raw BuildContext inside our
+/// logic layer, but instead use context-aware adapters.
 class CounterReactor {
   CounterReactor({required this.dialogLauncher});
 
@@ -61,6 +78,7 @@ class CounterReactor {
 
   Future<void> showLimitDialog() async {
     await dialogLauncher.launchInfoDialog(
+      // The context callback guarantees translations work flawlessly here
       title: (context) => 'Limit Reached!',
     );
   }
@@ -68,6 +86,8 @@ class CounterReactor {
 
 // --- Hako ---
 
+/// The Orchestrator. The Hako listens to the View, delegates pure work to the Interactor,
+/// triggers side effects in the Reactor, and natively updates state.
 class CounterHako extends IRKondoHako<CounterInteractor, CounterReactor> {
   CounterHako({
     required super.interactor,
@@ -78,23 +98,28 @@ class CounterHako extends IRKondoHako<CounterInteractor, CounterReactor> {
 
   Future<void> onIncrementTap() async {
     final currentCount = get<CounterSectionState>().count;
-    
+
+    // Abstractly broadcast the UI loading intent
     set((_) => CounterSectionState(currentCount, isLoading: true));
-    
+
+    // Delegate domain logic and calculations completely to the Interactor
     final newCount = await interactor.increment(currentCount);
-    
+
+    // Update Orchestrator state and remove loading barrier
     set((_) => CounterSectionState(newCount, isLoading: false));
-    
+
+    // Delegate UI side effects based on domain rules
     if (interactor.isLimitReached(newCount)) {
       await reactor.showLimitDialog();
     }
   }
 }
 
+// Best Practice: Always provide a safe Context Extension for your views!
 extension CounterHakoContextExtension on BuildContext {
   CounterHako get counterHako => readHako<CounterHako>();
-  
-  CounterSectionState watchCounterSectionState() => 
+
+  CounterSectionState watchCounterSectionState() =>
       watchHakoState<CounterHako, CounterSectionState>();
 }
 
@@ -153,7 +178,9 @@ class CounterPage extends StatelessWidget {
       createHako: (context) => CounterHako(
         interactor: context.resolveDependency<CounterInteractor>(),
         reactor: CounterReactor(
-          dialogLauncher: ContextAwareDialogLauncher(contextResolver: () => context),
+          // Safely passing the Context through a robust lazy loader!
+          dialogLauncher:
+              ContextAwareDialogLauncher(contextResolver: () => context),
         ),
       ),
       builder: (context) => Scaffold(
@@ -161,6 +188,7 @@ class CounterPage extends StatelessWidget {
         body: Center(
           child: Builder(
             builder: (context) {
+              // Here we restrict the rebuild geometry to ONLY this specific section.
               final state = context.watchCounterSectionState();
 
               return state.isLoading
@@ -170,6 +198,7 @@ class CounterPage extends StatelessWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton(
+          // Call events strictly formulated via intent ('onIncrementTap')
           onPressed: context.counterHako.onIncrementTap,
           child: const Icon(Icons.add),
         ),
