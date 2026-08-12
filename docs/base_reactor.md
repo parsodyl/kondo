@@ -21,7 +21,7 @@ The Reactor handles **everything that is "launched," triggered, or requires impe
 #### A. Visual & In-Page Control
 The Reactor handles imperative UI actions that don't involve navigating to a new feature, but rather manipulating the current visual environment.
 * **Scroll Control:** `reactor.scrollToTop()`, `reactor.scrollToErrorField()`
-* **Tab/Page Controllers:** `reactor.switchToTab(int index)`
+* **Tab/Page Controllers:** `reactor.switchToOverviewTab()`
 * **Focus Management:** `reactor.removeKeyboardFocus()`
 
 #### B. User Prompts & Decisions (Yielding to Hako)

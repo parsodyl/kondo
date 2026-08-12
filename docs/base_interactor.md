@@ -46,7 +46,7 @@ Interactors **can** and **should** expose Streams, but with a strict limitation:
 * **Transformer, Not Source:** The Interactor can take a Stream from a Repository (e.g., `playlistListStream`), `map` it, `filter` it, and return it as a derived Stream (e.g., `getVisualPlaylistStream`).
 * **No StreamControllers:** The Interactor must **never** instantiate a `StreamController` or manually add events to a stream. That implies holding state.
 * *Why?* If the Interactor holds a Controller, it holds memory. If you navigate away and come back, that memory might be stale or duplicated.
-* *Rule:* Only Repositories (which are singletons) manage Stream Controllers. Interactors only **pipe** and **transform** them.
+* *Rule:* Only Repositories (which are already instantiated) manage Stream Controllers. Interactors only **pipe** and **transform** them.
 
 
 ### 4. Shared Functionality via Mixins 🧩

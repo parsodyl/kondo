@@ -13,7 +13,7 @@ are scalable, readable, and easy to test.
 
 ## Kondo's Place in Your Architecture 🏗️
 
-Kondo doesn't sit neatly "between" layers—it **intercepts and orchestrates** the *feature layer* while its boundaries fade
+Kondo doesn't sit neatly "between" technical layers—it **intercepts and orchestrates** the *feature layer* while its boundaries fade
 gracefully into adjacent layers.
 
 <br/>
@@ -33,7 +33,7 @@ never leaks into your UI, and state management never gets tangled with complex l
 The **Hako** is the cornerstone of a feature. It is the central hub where everything connects.
 
 * **Role:** It holds the single feature state and decides how to react to user inputs. It listens to events from the View, delegates
-  complex work to the Interactor, and commands the Reactor to handle navigation.
+  complex work to the Interactor, and commands the Reactor to handle navigation and side effects.
 * While it contains no Flutter widgets, the Hako is **aware of the View's interface**. It knows *what* state the UI
   needs to render and *which* events the UI can trigger.
 * Typical Responsibilities:
