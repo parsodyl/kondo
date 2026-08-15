@@ -72,61 +72,16 @@ The **Reactor** manages the boundaries of your feature.
 
 ## Architecture at a glance 🔍
 
-The following diagram shows the complete flow of data and interactions within the Kondo architecture. Don't worry if it looks complex at first glance—it's intentionally detailed to serve as a reference as you learn. For now, just notice the three core components (Hako, Interactor, and Reactor) and how they sit between your UI and data layers. The specific arrows and flows will make more sense as you read through the individual explanations below.
+The following diagram illustrates the flow of data and interactions within the Kondo architecture. While this overview is simplified, it is comprehensive enough to capture the essential responsibilities of each element and serve as a reliable reference as you learn. Notice how the three core components of the Kondo Triad (**Hako**, **Interactor**, and **Reactor**) orchestrate data, logic, and side effects between your UI and Data layers.
 
-```mermaid
-graph TD
-    subgraph UI Layer
-        V(Flutter View: Widgets)
-        P(Native View: Plugins)    
-    end
+<br/>
+<p align="center">
+  <img alt="The Kondo Triad components and their interactions across architectural layers." src="images/kondo_triad_diagram.png" title="Kondo Triad Architecture"/>
+</p>
+<br/>
 
-    subgraph Kondo Triad
-        H(Hako: Feature State Holder & Orchestrator)
-        I(Interactor: Business Logic & Data Adapter)
-        R(Reactor: Side Effects Handler)
-    end
-
-    subgraph Data Layer
-        S(Services: e.g., API, DB, Device)
-        RP(Repositories: e.g., Cached Data, Shared App State)
-    end
-
-    %% --- Flow ---
-
-    %% View -> Hako (User Events)
-    V -- User Events \n(e.g., onTap, onChanged) --> H
-
-    %% Hako -> Interactor (Business Logic Requests)
-    H -- Business Logic Requests --> I
-
-    %% Interactor -> Data Layer (Data Fetch/Update)
-    I -- Data Requests --> S
-    I -- Data Fetch/Update --> RP
-
-    %% Data Layer -> Interactor (Results)
-    S -- Data Responses --> I
-    RP -- Results \n(e.g., Futures, Streams) --> I
-
-    %% Interactor -> Hako (Processed Data/Streams)
-    I -- Processed Data / Streams --> H
-
-    %% Hako -> Reactor (Side Effect Commands)
-    H -- Side Effect Commands --> R
-    
-    %% Reactor -> Hako (User Choices Results)
-    R -- User Choices Results \n(e.g., Dialog Confirmations, File picking) --> H
-
-    %% Reactor -> View (Execute Internal UI Side Effects)
-    R -- Internal Actions \n(e.g., Navigation, Dialogs, Snackbars) --> V
-    
-    %% Reactor -> Visual Plugins (Execute Eternal UI Side Effects)
-    R -- External Actions \n(e.g., Opening Links, Taking Photos) --> P
-
-    %% Hako's internal state management
-    H -- Updates State --> V
-    V -- Renders State --> H
-```
+> [!TIP]
+> For a deeper, granular look at all individual node-to-node interactions, explore the [Full Architecture Flowchart](https://github.com/parsodyl/kondo/blob/main/doc/architecture_flow.md).
 
 ---
 
