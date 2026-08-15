@@ -34,7 +34,7 @@ abstract class KondoHakoEvent extends HakoEvent {
   int get hashCode => runtimeType.hashCode;
 }
 
-/// Represents an event emitted when the [interactor] getter is accessed
+/// Represents an event emitted when the `interactor` getter is accessed
 /// on a [KondoHako] variant.
 ///
 /// These events are dispatched automatically for debugging and tracking
@@ -58,7 +58,7 @@ class InteractorEvent extends KondoHakoEvent {
   }
 }
 
-/// Represents an event emitted when the [reactor] getter is accessed
+/// Represents an event emitted when the `reactor` getter is accessed
 /// on a [KondoHako] variant.
 ///
 /// These events are dispatched automatically for debugging and tracking

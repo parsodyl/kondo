@@ -48,7 +48,7 @@ import 'kondo_hako_events.dart';
 abstract class KondoHako extends BaseHako {
   /// Constructs a [KondoHako].
   ///
-  /// The positional argument is a [StateRegistrar] callback used to register
+  /// The positional argument is a `StateRegistrar` callback used to register
   /// initial state objects:
   ///
   /// ```dart

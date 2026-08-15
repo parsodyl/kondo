@@ -60,7 +60,7 @@ extension DependencyResolverContextExtension on BuildContext {
   /// Resolves and returns an instance of type [T] from the dependency resolver.
   ///
   /// This is a convenience method that reads the [KondoDependencyResolver] from
-  /// the widget tree and calls its [resolve] method.
+  /// the widget tree and calls its `resolve` method.
   ///
   /// Example:
   /// ```dart
@@ -76,7 +76,7 @@ extension DependencyResolverContextExtension on BuildContext {
 /// [KondoDependencyResolver].
 ///
 /// This widget creates a [KondoDependencyResolver] and automatically calls its
-/// [dismantle] method when the widget is disposed, ensuring proper cleanup of
+/// `dismantle` method when the widget is disposed, ensuring proper cleanup of
 /// resources.
 ///
 /// Example:
@@ -103,7 +103,7 @@ class KondoDependencyProvider extends Provider<KondoDependencyResolver> {
   /// The [child] widget will have access to the resolver through the widget
   /// tree.
   ///
-  /// When this provider is disposed, it automatically calls [dismantle] on the
+  /// When this provider is disposed, it automatically calls `dismantle` on the
   /// resolver to clean up resources.
   KondoDependencyProvider({
     required Create<KondoDependencyResolver> createResolver,
@@ -120,7 +120,7 @@ class KondoDependencyProvider extends Provider<KondoDependencyResolver> {
   /// [KondoDependencyResolver] instance via the [value] parameter instead of
   /// creating a new one.
   ///
-  /// **Important**: When using this constructor, the [dismantle] method will
+  /// **Important**: When using this constructor, the `dismantle` method will
   /// NOT be called automatically when the provider is disposed. The caller is
   /// responsible for managing the lifecycle of the resolver instance.
   ///
