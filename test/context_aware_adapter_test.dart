@@ -96,8 +96,7 @@ void main() {
       expect(result, 'done');
     });
 
-    testWidgets('skips action and returns null when unmounted',
-        (tester) async {
+    testWidgets('skips action and returns null when unmounted', (tester) async {
       late BuildContext capturedContext;
       await tester.pumpWidget(
         Builder(builder: (context) {

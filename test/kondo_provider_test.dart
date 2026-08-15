@@ -76,8 +76,7 @@ void main() {
       expect(readHako.onReadyCallCount, 1);
     });
 
-    testWidgets('custom onReady replaces default hako.onReady',
-        (tester) async {
+    testWidgets('custom onReady replaces default hako.onReady', (tester) async {
       late TestKondoHako readHako;
       var customOnReadyCalled = false;
 
@@ -162,8 +161,7 @@ void main() {
       expect(readHako, same(existingHako));
     });
 
-    testWidgets('does NOT dispose hako when removed from tree',
-        (tester) async {
+    testWidgets('does NOT dispose hako when removed from tree', (tester) async {
       final existingHako = TestKondoHako();
 
       await tester.pumpWidget(
