@@ -96,7 +96,9 @@ KondoProvider<SongDetailHako>(
     // This album comes from the parent Hako's state.
     // When the parent updates, this entire provider rebuilds.
     album: parentAlbum,
-    interactor: context.resolveDependency<SongDetailInteractor>(),
+    interactor: SongDetailInteractor(
+      albumRepository: context.resolveDependency<AlbumRepository>(),
+    ),
     reactor: SongDetailReactor(...),
   ),
   builder: (context) => const SongDetailView(),

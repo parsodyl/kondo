@@ -356,7 +356,7 @@ Kondo enforces dependency injection to decouple UI logic from backend services. 
 ### Step 1: Implementation of the Resolver
 Implement `KondoDependencyResolver` by wrapping your DI container. 
 * **`Repositories` / `Services`**: Cache globally as **Singletons**.
-* **`Interactors`**: Inject generically as **Factories** (created fresh per view).
+* **`Interactors`**: 🚫 **Do NOT register Interactors in the DI container.** Interactors should always be constructed inline in the view, just like the Reactor. This prevents misalignment and allows you to easily pass view-specific parameters (like a route `id`) directly into the Interactor's constructor without routing them awkwardly through the Hako.
 
 ```dart
 import 'package:kiwi/kiwi.dart';
@@ -365,7 +365,7 @@ import 'package:kondo/kondo.dart';
 class MyDependencyResolver implements KondoDependencyResolver {
   MyDependencyResolver() : _container = KiwiContainer() {
     _container.registerSingleton((c) => AnalyticsService());
-    _container.registerFactory((c) => CounterInteractor(c.resolve()));
+    // Note: We only register dependencies, NOT the Interactors themselves.
   }
 
   final KiwiContainer _container;
@@ -448,7 +448,9 @@ Down in your view's `KondoProvider`, you provide the context dynamically using a
 
 ```dart
       createHako: (context) => CounterHako(
-        interactor: context.resolveDependency<CounterInteractor>(),
+        interactor: CounterInteractor(
+          analyticsService: context.resolveDependency<AnalyticsService>(),
+        ),
         reactor: CounterReactor(
           // Safely passing the Context through a robust lazy loader!
           dialogLauncher: ContextAwareDialogLauncher(contextResolver: () => context),
