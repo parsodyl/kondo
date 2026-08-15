@@ -14,8 +14,8 @@ import 'package:flutter/widgets.dart';
 /// `DialogLauncher`, or `ToastManager`.
 ///
 /// ```dart
-/// class PageNavigator extends ContextAwareAdapter {
-///   PageNavigator({required super.contextResolver});
+/// class ContextAwareNavigator extends ContextAwareAdapter {
+///   ContextAwareNavigator({required super.contextResolver});
 ///
 ///   void pop() => tryRun((context) => Navigator.of(context).pop());
 /// }
@@ -63,6 +63,12 @@ abstract class ContextAwareAdapter {
   ///
   /// Supports both synchronous and asynchronous actions.
   ///
+  /// **Important:** If your action performs asynchronous operations before
+  /// using the context, the context may become stale or invalid during the
+  /// async gap—even if it was non-null at the start. In such cases, prefer
+  /// using [maybeContext] directly instead of this helper, so you can
+  /// re-check the context after each `await`.
+  ///
   /// ```dart
   /// // Sync (Navigation)
   /// tryRun((c) => Navigator.of(c).pop());
@@ -73,26 +79,5 @@ abstract class ContextAwareAdapter {
   FutureOr<R?> tryRun<R>(FutureOr<R?> Function(BuildContext context) action) {
     final context = maybeContext;
     return context != null ? action(context) : null;
-  }
-
-  /// Safely executes an asynchronous action, providing a safe context accessor.
-  ///
-  /// Use this when your action contains `await` gaps, during which the widget
-  /// might be unmounted. The `getContext` callback will return the
-  /// [BuildContext] if it's still mounted, or `null` if it has been unmounted.
-  ///
-  /// ```dart
-  /// await tryRunAsync((getContext) async {
-  ///   await Future.delayed(Duration(seconds: 1));
-  ///   final context = getContext();
-  ///   if (context != null) {
-  ///     Navigator.of(context).pop();
-  ///   }
-  /// });
-  /// ```
-  Future<R?> tryRunAsync<R>(
-    Future<R?> Function(BuildContext? Function() getContext) action,
-  ) {
-    return action(() => maybeContext);
   }
 }

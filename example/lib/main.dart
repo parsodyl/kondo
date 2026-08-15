@@ -56,16 +56,11 @@ class ContextAwareDialogLauncher extends ContextAwareAdapter {
   Future<void> launchInfoDialog({
     required String Function(BuildContext context) title,
   }) async {
-    // tryRunAsync strictly guarantees the interior closure only executes if the widget is still mounted
-    await tryRunAsync((getContext) async {
-      final context = getContext();
-      if (context != null) {
-        await showDialog(
+    // tryRun safely executes the closure only if the widget is still mounted
+    await tryRun((context) => showDialog(
           context: context,
           builder: (_) => AlertDialog(title: Text(title(context))),
-        );
-      }
-    });
+        ));
   }
 }
 
