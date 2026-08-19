@@ -1,4 +1,4 @@
-### Internal Structure: Composing Data & Interaction 🧩
+# Internal State Structure: Composing Data & Interaction 🧩
 
 While Kondo mandates **Semantic Sectioning** (the outer structure), the *internal structure* of those State Objects is flexible.
 
@@ -22,7 +22,7 @@ Transient UI state (like `isExpanded`, `isFocused`, `isLoading`) can be added to
 
 **Types of State Objects:**
 - **Smart Wrapper:** Wraps a domain entity (optionally adding transient UI fields)
-- **Pure State:** Defines explicit fields for every input and flags
+- **Pure State:** Defines explicit fields for every input and flag
 - **Pure Mapping:** Defines a final shape from multiple sources
 
 Choose the pattern that balances type safety with developer velocity, keeping in mind that **heavy business logic belongs in the Interactor**, while **UI formatting (Colors, Icons) belongs in the View.**

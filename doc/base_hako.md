@@ -134,19 +134,19 @@ Use `connectStream<T>` when incoming stream data directly updates a registered s
 class ChatHako extends IKondoHako<ChatInteractor> {
   ChatHako({required super.interactor})
       : super((register) {
-          register(const ChatMessagesState([]));
-          register(const ConnectionState(isOnline: false));
+          register(const ChatMessagesSectionState([]));
+          register(const ConnectionSectionState(isOnline: false));
         }) {
     // 1. Direct state replacement
-    connectStream<ConnectionState>(
-      stream: interactor.connectionStatusStream,
+    connectStream<ConnectionSectionState>(
+      stream: interactor.getConnectionStatusStream().map(ConnectionSectionState.new),
     );
 
-    // 2. Incremental state transformation (appending new messages)
-    connectStream<ChatMessagesState>(
-      stream: interactor.incomingMessagesStream,
-      onEvent: (currentState, incomingMessage) => currentState.copyWith(
-        messages: [...currentState.messages, incomingMessage],
+    // 2. Incremental state transformation (merging incoming state)
+    connectStream<ChatMessagesSectionState>(
+      stream: interactor.getIncomingMessagesStream().map(ChatMessagesSectionState.new),
+      onEvent: (currentState, incomingState) => currentState.copyWith(
+        messages: [...currentState.messages, ...incomingState.messages],
       ),
       onError: (error) => debugPrint('Stream error: $error'),
     );
@@ -159,7 +159,7 @@ Use `listenStream<T>` when you want to listen to a stream for custom handling, s
 
 ```dart
 listenStream<UserSessionEvent>(
-  stream: interactor.sessionEventsStream,
+  stream: interactor.getSessionEventsStream(),
   onData: (event) {
     if (event.isExpired) {
       reactor.showSessionExpiredDialog();

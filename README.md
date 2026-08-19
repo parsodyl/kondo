@@ -66,7 +66,7 @@ The **Reactor** manages the boundaries of your feature.
     - Navigation between screens
     - Showing snackbars, dialogs and bottom sheets
     - Triggering visual system-level actions
-    - Handling several other Flutter context-dependent operation
+    - Handling several other Flutter context-dependent operations
 
 ---
 
@@ -404,7 +404,7 @@ Down in your view's `KondoProvider`, you provide the context dynamically using a
 ```dart
       createHako: (context) => CounterHako(
         interactor: CounterInteractor(
-          analyticsService: context.resolveDependency<AnalyticsService>(),
+          context.resolveDependency<AnalyticsService>(),
         ),
         reactor: CounterReactor(
           // Safely passing the Context through a robust lazy loader!
@@ -492,5 +492,5 @@ Once you are comfortable with the canonical flow mapping of the Triad above, div
 *   📝 **[Structuring State](https://github.com/parsodyl/kondo/blob/main/doc/structuring_state.md)** - The critical rules of Semantic Sectioning and why string-labels for state lookup are a total anti-pattern.
 *   🧩 **[Internal State Structure](https://github.com/parsodyl/kondo/blob/main/doc/internal_state_structure.md)** - When to use "Smart Wrappers" vs strictly mapping "Pure Data" structures.
 *   🧠 **[The Base Interactor](https://github.com/parsodyl/kondo/blob/main/doc/base_interactor.md)** - Handling streams, avoiding UI dependencies, and differentiating App State vs Feature State.
-*   ⚡  **[The Base Reactor](https://github.com/parsodyl/kondo/blob/main/doc/base_reactor.md)** - Deep dive into lightweight callbacks, Context-Aware Adapters, and natively shielding against `Deactivated Widget` crashes.
+*   ⚡ **[The Base Reactor](https://github.com/parsodyl/kondo/blob/main/doc/base_reactor.md)** - Deep dive into lightweight callbacks, Context-Aware Adapters, and natively shielding against `Deactivated Widget` crashes.
 *   🏠 **[State Ownership](https://github.com/parsodyl/kondo/blob/main/doc/state_ownership.md)** - Deciding whether state belongs in a Repository, an Ancestor Hako, or a Leaf Hako based on scope in the widget tree.

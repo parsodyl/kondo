@@ -8,7 +8,7 @@ Add Kondo to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  kondo: ^0.0.1
+  kondo: ^0.0.2
 ```
 
 Kondo depends on the [hako](https://pub.dev/packages/hako) state management package, which provides the core state container primitives (`register`, `get`, `set`) that Kondo builds upon. It will be installed automatically as a transitive dependency.

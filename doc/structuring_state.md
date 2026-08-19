@@ -150,7 +150,7 @@ The constructor of your Hako acts as the "Manifest" for your UI. You should be a
 // ❌ Bad: The Raw Data Dump (Ambiguous)
 super((register) {
   register(Album(...));          // The header? Or just data?
-  register(List<Track>([]));     // The content? Or a hidden playlist?
+  register(<Track>[]);           // The content? Or a hidden playlist?
   register(true);                // What is loading? The page? The list?
 });
 

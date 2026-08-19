@@ -218,4 +218,4 @@ The Hako shouldn't know if the app uses `GoRouter` or standard `Navigator`, nor 
 2. [ ] **Does it choose the right pattern?** (Callbacks for local controllers/scrolling; `ContextAwareAdapter` for async dialogs & navigation).
 3. [ ] **Does it use Composition over Inheritance?** (Reactors receive injected adapters or callbacks, rather than extending `ContextAwareAdapter` directly).
 4. [ ] **Are methods intent-based?** (Names describe the user action or outcome, not UI framework classes).
-5. [ ] **Does it return safe fallbacks for user prompts?** (Ensure `Future` return types handle `null` gracefully when dialogs are dismissed or context unmounts).r context unmounts).
+5. [ ] **Does it return safe fallbacks for user prompts?** (Ensure `Future` return types handle `null` gracefully when dialogs are dismissed or context unmounts).
