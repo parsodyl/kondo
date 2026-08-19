@@ -1,6 +1,6 @@
 name: kondo
 description: A strict, feature-oriented architecture pattern for Flutter, enforcing pure decoupled logic and side-effect safety.
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/parsodyl/kondo
 repository: https://github.com/parsodyl/kondo
 issue_tracker: https://github.com/parsodyl/kondo/issues
