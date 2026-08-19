@@ -20,7 +20,6 @@ dependencies:
     sdk: flutter
 
   provider: ^6.1.1
-  collection: ^1.17.0
   hako: ^0.0.4
 
 dev_dependencies:
