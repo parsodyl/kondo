@@ -223,6 +223,6 @@ extension ProductDetailContextExtension on BuildContext {
 Understanding the role of the Hako, its lifecycle, stream connections, and context extensions is the foundation of building robust features.
 
 In the upcoming sections, we will cover:
-1.  **[Naming Event Handlers](./naming_event_handlers.md):** The "Wireframe Test" and intent-oriented naming formulas for your Hako methods.
-2.  **[Structuring State](./structuring_state.md):** Why you should avoid monolithic "God States" and use Semantic Sectioning.
-3.  **[Internal State Structures](./internal_state_structure.md):** How to explicitly define the structs registered inside the Hako.
+1.  **[Naming Event Handlers](./hako_naming_event_handlers.md):** The "Wireframe Test" and intent-oriented naming formulas for your Hako methods.
+2.  **[Structuring State](./hako_state_structuring.md):** Why you should avoid monolithic "God States" and use Semantic Sectioning.
+3.  **[Internal State Structures](./hako_state_internal_structure.md):** How to explicitly define the structs registered inside the Hako.

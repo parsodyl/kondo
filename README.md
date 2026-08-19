@@ -487,10 +487,11 @@ With these helpers, your UI automatically mirrors your database in real-time wit
 
 Once you are comfortable with the canonical flow mapping of the Triad above, dive into our Advanced Concept guides.
 
-*   📦 **[The Base Hako](https://github.com/parsodyl/kondo/blob/main/doc/base_hako.md)** - Core state binder, UI orchestrator, and granular rebuilding mechanics.
-*   🏷️ **[Naming Event Handlers](https://github.com/parsodyl/kondo/blob/main/doc/naming_event_handlers.md)** - The mandatory `on+[Subject]+[Trigger]` scheme allowing codebases to remain perfectly agnostic to widget changes.
-*   📝 **[Structuring State](https://github.com/parsodyl/kondo/blob/main/doc/structuring_state.md)** - The critical rules of Semantic Sectioning and why string-labels for state lookup are a total anti-pattern.
-*   🧩 **[Internal State Structure](https://github.com/parsodyl/kondo/blob/main/doc/internal_state_structure.md)** - When to use "Smart Wrappers" vs strictly mapping "Pure Data" structures.
-*   🧠 **[The Base Interactor](https://github.com/parsodyl/kondo/blob/main/doc/base_interactor.md)** - Handling streams, avoiding UI dependencies, and differentiating App State vs Feature State.
-*   ⚡ **[The Base Reactor](https://github.com/parsodyl/kondo/blob/main/doc/base_reactor.md)** - Deep dive into lightweight callbacks, Context-Aware Adapters, and natively shielding against `Deactivated Widget` crashes.
+*   📦 **[The Hako (Orchestrator)](https://github.com/parsodyl/kondo/blob/main/doc/triad_hako.md)** - Core state binder, UI orchestrator, lifecycle, and granular rebuilding mechanics.
+*   🧠 **[The Interactor (Business Logic)](https://github.com/parsodyl/kondo/blob/main/doc/triad_interactor.md)** - Handling streams, calculations, pure domain logic, and differentiating App State vs Feature State.
+*   ⚡ **[The Reactor (Side Effects)](https://github.com/parsodyl/kondo/blob/main/doc/triad_reactor.md)** - Deep dive into lightweight callbacks, Context-Aware Adapters, and natively shielding against `Deactivated Widget` crashes.
+*   🏷️ **[Naming Event Handlers](https://github.com/parsodyl/kondo/blob/main/doc/hako_naming_event_handlers.md)** - The mandatory `on+[Subject]+[Trigger]` scheme allowing codebases to remain perfectly agnostic to widget changes.
+*   📝 **[Structuring State](https://github.com/parsodyl/kondo/blob/main/doc/hako_state_structuring.md)** - The critical rules of Semantic Sectioning and why string-labels for state lookup are a total anti-pattern.
+*   🧩 **[Internal State Structure](https://github.com/parsodyl/kondo/blob/main/doc/hako_state_internal_structure.md)** - When to use "Smart Wrappers" vs strictly mapping "Pure Data" structures.
 *   🏠 **[State Ownership](https://github.com/parsodyl/kondo/blob/main/doc/state_ownership.md)** - Deciding whether state belongs in a Repository, an Ancestor Hako, or a Leaf Hako based on scope in the widget tree.
+*   🔍 **[Architecture Flowchart](https://github.com/parsodyl/kondo/blob/main/doc/architecture_flow.md)** - Interactive diagram and node-to-node component interaction flows across layers.

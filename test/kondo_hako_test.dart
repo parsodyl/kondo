@@ -110,6 +110,29 @@ void main() {
       expect(hako.onReadyCalled, isTrue);
       hako.dispose();
     });
+
+    test('calling set after dispose updates container value without error', () {
+      final hako = TestKondoHako();
+      hako.dispose();
+
+      expect(() => hako.updateCounter(42), returnsNormally);
+      expect(hako.getCounterState().count, 42);
+    });
+
+    test('in-flight async operation completing after dispose', () async {
+      final hako = TestKondoHako();
+
+      Future<void> asyncOperation() async {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        hako.updateCounter(99);
+      }
+
+      final future = asyncOperation();
+      hako.dispose();
+      await future;
+
+      expect(hako.getCounterState().count, 99);
+    });
   });
 
   group('connectStream', () {

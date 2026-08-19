@@ -83,96 +83,71 @@ Once you know *where* state lives, the next question is *how* a child feature re
 
 Choosing wrong leads to stale UI—a child Hako displaying outdated data because its constructor value was captured once and never refreshed.
 
-#### When Constructor Parameters Are Safe ✅
+#### When Constructor Parameters Are Appropriate ✅
 
-If the data comes from an **Ancestor Hako** (via its `KondoProvider`), passing it as a constructor parameter to the child Hako is the most natural and correct approach.
+Constructor parameters are designed for **initial configuration and stable inputs** when a feature is mounted into the widget tree.
 
-*Why?* When the Ancestor Hako updates its state, the ancestor's View rebuilds. This rebuild tears down the child `KondoProvider`, destroying the old child Hako and creating a fresh one with the new constructor value. The child's entire Triad is reconstructed—so the "static" parameter is never stale.
+This is ideal in two primary scenarios:
+1. **Navigating to a New Screen or Route:** Passing stable entity identifiers or route arguments (e.g. `productId`, `userId`) when mounting a feature page.
+2. **Tab Switching & Section Replacement:** When an ancestor view replaces an entire section (e.g. switching between bottom tabs or distinct workflow steps), the outgoing feature's `KondoProvider` is unmounted and destroyed, and the incoming child feature is instantiated fresh with its initial parameters:
 
 ```dart
-// ✅ Safe: Parent state change destroys and recreates the child Triad
-KondoProvider<SongDetailHako>(
-  createHako: (context) => SongDetailHako(
-    // This album comes from the parent Hako's state.
-    // When the parent updates, this entire provider rebuilds.
-    album: parentAlbum,
-    interactor: SongDetailInteractor(
-      albumRepository: context.resolveDependency<AlbumRepository>(),
-    ),
-    reactor: SongDetailReactor(...),
-  ),
-  builder: (context) => const SongDetailView(),
-)
+// ✅ Appropriate: Swapping entire sections or tabs where child Triads are mounted fresh
+Widget build(BuildContext context) {
+  final activeSection = context.watchActiveSection();
+
+  return switch (activeSection) {
+    Section.profile => ProfilePage(userId: currentUserId),
+    Section.settings => const SettingsPage(),
+  };
+}
 ```
 
-#### When Constructor Parameters Are Dangerous ❌
+#### When Constructor Parameters Are an Anti-Pattern ❌
 
-The danger arises when the **parent Hako** already projects Repository data via `connectStream`, passes that data to a **child Hako** through its constructor, and the **child also subscribes** to the same Repository stream via its own `connectStream`. This creates two competing update paths for the same data:
+The anti-pattern occurs when developers attempt to pass **volatile, dynamic parent state snapshots** down through child constructors inside the *same persistent view*, expecting child Hakos to continuously re-synchronize.
 
-1. The Repository emits a change → the parent's projection updates → the parent View rebuilds → the child's `KondoProvider` is destroyed and recreated with the new constructor value.
-2. The same Repository emission → the child's own `connectStream` fires → tries to update state on a Hako that is simultaneously being destroyed and recreated.
-
-This is both **confusing** (unclear which path "owns" the update) and **dangerous** (race conditions between destruction and stream updates).
+Even worse is creating **competing update paths**: when the parent projects Repository data via `connectStream`, passes that data down through a child constructor, and the child also subscribes to the same Repository stream via its own `connectStream`:
 
 ```dart
 // ❌ Anti-pattern: Two competing update paths for the same data
-// Parent Hako projects the favorite status from the Repository
+// Parent Hako projects playlist data from the Repository
 class PlaylistHako extends IRKondoHako<PlaylistInteractor, PlaylistReactor> {
   PlaylistHako(...) : super((register) {
     register(const PlaylistContentState());
   }) {
-    // Parent subscribes to favorites — its projection includes isFavorited
     connectStream<PlaylistContentState>(
       stream: interactor.getPlaylistStream().map(PlaylistContentState.fromDomain),
     );
   }
 }
 
-// Parent passes the projected data to the child via constructor
-KondoProvider<SongDetailHako>(
-  createHako: (context) => SongDetailHako(
-    // This comes from the parent's projection — when it changes,
-    // this entire provider is destroyed and recreated.
-    song: parentPlaylistState.selectedSong,
-    ...
-  ),
-  ...
-)
-
-// Child ALSO subscribes to the same Repository — competing with the parent rebuild!
+// Child Hako receives snapshot via constructor AND subscribes independently
 class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor> {
   SongDetailHako({required this.song, ...}) : super((register) {
     register(SongHeaderState.fromDomain(song));
   }) {
-    // 💥 This stream fires at the same time the parent destroys this Hako!
+    // 💥 Competing update paths: constructor snapshot vs live stream updates!
     connectStream<SongHeaderState>(
       stream: interactor.getSongStream(song.id).map(SongHeaderState.fromDomain),
     );
   }
+
+  final Song song;
 }
 ```
 
-**The fix:** Choose **one** update path. Either:
-
-* **Constructor only:** The parent projects the data and passes it down. The child does *not* subscribe to the same source. When the parent updates, the child is cleanly recreated.
-* **Stream only:** The child subscribes to the Repository stream via its own Interactor. The parent does *not* pass the same data as a constructor parameter—it passes only stable identifiers (e.g., an ID) that the child uses to set up its own `connectStream`.
+**The Canonical Kondo Rule:**
+- **Initial Setup / Swapped Sections:** Pass **stable identifiers** (`songId`, `userId`) or static configuration via the constructor.
+- **Live Reactive Updates:** Let the feature subscribe to its own projection of the Repository stream via `connectStream`.
 
 ```dart
-// ✅ Correct: Child subscribes independently using a stable identifier
-KondoProvider<SongDetailHako>(
-  createHako: (context) => SongDetailHako(
-    // Only the ID is passed — stable, won't trigger parent rebuilds
-    songId: selectedSongId,
-    ...
-  ),
-  ...
-)
-
+// ✅ Canonical: Pass only stable identifiers; subscribe to live streams independently
 class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor> {
   SongDetailHako({required this.songId, ...}) : super((register) {
     register(const SongHeaderState());
   }) {
-    // Single update path: the child owns its own projection
+    // Single, clean update path: the feature owns its live stream projection
     connectStream<SongHeaderState>(
       stream: interactor.getSongStream(songId).map(SongHeaderState.fromDomain),
     );
@@ -184,14 +159,13 @@ class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor
 
 #### The Decision Matrix
 
-| Data Source | Approach | Rationale |
+| Data Need | Canonical Approach | Rationale |
 |---|---|---|
-| Ancestor Hako (parent projection) | **Constructor parameter** — child does not subscribe to the same source | Parent rebuild recreates the child cleanly |
-| Repository (child needs live updates) | **`connectStream` projection** — pass only stable identifiers via constructor | Child owns its own update path |
-| Repository (static for this screen) | **Constructor parameter** (e.g., an ID, a route argument) | Value never changes during the child's lifetime |
-| Leaf Hako itself | **`set<T>()` internally** | Standard local state management |
+| New screen or swapped tab/section | **Constructor parameter** (`id`, static config) | Feature is mounted fresh with initial parameters |
+| Live, reactive data updates | **`connectStream` projection** via Interactor | Feature owns its own live data lifecycle |
+| Local UI interaction state | **`set<T>()` internally** | Feature state managed locally in the Hako |
 
-**The Rule:** Never create two competing update paths for the same data. If the parent projects it, the child receives it via constructor and trusts the parent. If the child needs to subscribe independently, the parent passes only stable identifiers—not the projected data itself.
+**The Rule:** Avoid passing mutable parent state snapshots down child constructors. Pass stable identifiers at mount time, and let features subscribe to live streams independently.
 
 ---
 
