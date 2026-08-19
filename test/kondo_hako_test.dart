@@ -56,6 +56,13 @@ class TestKondoHako extends KondoHako {
   void listenToStream<T>(Stream<T> stream, void Function(T) onData) {
     listenStream<T>(stream: stream, onData: onData);
   }
+
+  void mapStreamToState<T, S>(
+    Stream<T> stream,
+    S Function(S current, T event) mapper,
+  ) {
+    mapStream<T, S>(stream: stream, mapper: mapper);
+  }
 }
 
 class TestIKondoHako extends IKondoHako<FakeInteractor> {
@@ -179,6 +186,46 @@ void main() {
       final controller = StreamController<CounterState>();
 
       hako.connectToStream(controller.stream);
+      hako.dispose();
+
+      expect(controller.hasListener, isFalse);
+
+      await controller.close();
+    });
+  });
+
+  group('mapStream', () {
+    test('updates state using mapper when stream emits', () async {
+      final hako = TestKondoHako();
+      final controller = StreamController<int>();
+
+      hako.mapStreamToState<int, CounterState>(
+        controller.stream,
+        (current, event) => CounterState(current.count + event),
+      );
+
+      controller.add(10);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(hako.getCounterState().count, 10);
+
+      controller.add(5);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(hako.getCounterState().count, 15);
+
+      await controller.close();
+      hako.dispose();
+    });
+
+    test('cancels subscription on dispose', () async {
+      final hako = TestKondoHako();
+      final controller = StreamController<int>();
+
+      hako.mapStreamToState<int, CounterState>(
+        controller.stream,
+        (current, event) => CounterState(event),
+      );
       hako.dispose();
 
       expect(controller.hasListener, isFalse);

@@ -447,9 +447,10 @@ class ChatroomInteractor {
 ```
 
 ### 3. The Hako (The Orchestrator)
-Inside your Hako constructor, you hook into the Interactor using one of two native helpers: `connectStream` OR `listenStream`. The Hako implicitly captures the stream, binds it, and automatically destroys it securely when the UI route is popped.
+Inside your Hako constructor, you hook into the Interactor using one of three native helpers: `connectStream`, `mapStream`, OR `listenStream`. The Hako implicitly captures the stream, binds it, and automatically destroys it securely when the UI route is popped.
 
-*   **`connectStream<T>`**: Use this when you want to pipe the incoming stream directly into a tracked `Semantic Section` State mapping.
+*   **`connectStream<T>`**: Use this when your stream type exactly matches your state type (1:1 direct pipe). Because reusing domain objects as Hako state slices is not recommended, it is very common to map the stream inline (e.g., `stream.map(MyState.new)`) when using this method.
+*   **`mapStream<T, S>`**: Use this when you want to map an incoming stream of type `T` into a tracked `Semantic Section` State of type `S`.
 *   **`listenStream`**: Use this when you need varying side-effects or heavy logic execution (like re-initializing another endpoint).
 
 ```dart
@@ -458,16 +459,23 @@ class ChatroomHako extends IRKondoHako<ChatroomInteractor, ChatroomReactor> {
     required super.interactor,
     required super.reactor,
   }) : super((register) {
+          register(const ConnectionSectionState(isOnline: false));
           register(const ChatFeedState([]));
         }) {
           
     // METHOD A: Direct State Binding (Pipes stream updates directly to the UI setter)
-    connectStream<ChatFeedState>(
-      // We map the incoming stream directly to our typed UI Section State
-      stream: interactor.getChatBubbleStream().map(ChatFeedState.new),
+    connectStream<ConnectionSectionState>(
+      // We map the incoming stream inline to our typed UI Section State
+      stream: interactor.getConnectionStatusStream().map(ConnectionSectionState.new),
     );
 
-    // METHOD B: Logic Execution (Triggers complex functions on data updates)
+    // METHOD B: Mapping State Binding (Transforms stream emissions to UI state)
+    mapStream<List<ChatBubble>, ChatFeedState>(
+      stream: interactor.getChatBubbleStream(),
+      mapper: (_, chatBubbles) => ChatFeedState(chatBubbles),
+    );
+
+    // METHOD C: Logic Execution (Triggers complex functions on data updates)
     listenStream(
       stream: interactor.getTypingIndicatorStream(),
       onData: (isTyping) {

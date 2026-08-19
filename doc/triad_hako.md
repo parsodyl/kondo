@@ -115,7 +115,7 @@ If needed, `KondoProvider` allows you to customize or skip the default `onReady`
 
 ---
 
-### 6. Connecting Data Safely (`connectStream` & `listenStream`) 🔌
+### 6. Connecting Data Safely (`connectStream`, `mapStream` & `listenStream`) 🔌
 
 Real-world Flutter apps are reactive: Interactors expose streams of data from WebSockets, Firebase, local SQLite change streams, or reactive repositories.
 
@@ -124,10 +124,18 @@ Because the Hako orchestrates the UI, it must consume these streams and translat
 The `KondoHako` base class provides built-in stream binding methods that automatically tie subscription lifetimes to the Hako:
 
 #### 1. `connectStream<T>()`: Direct State Mapping
-Use `connectStream<T>` when incoming stream data directly updates a registered state structure `T`.
+Use `connectStream<T>` when incoming stream data exactly matches a registered state structure `T` (a 1:1 direct pipe).
 
 * **Automatic State Updating:** Each stream emission triggers `set<T>()`.
 * **State Folding (`onEvent`):** Optionally fold or merge the incoming item with the current state.
+* **Guaranteed Cleanup:** The subscription is registered internally and automatically canceled when the Hako is destroyed.
+
+> **Note:** The Kondo architectural recommendation is to **not** reuse raw domain objects as Hako state slices, but rather to wrap them in UI-specific state structures. Because of this, a very common pattern with `connectStream` is to map the stream inline (e.g., `connectStream(stream: stream.map(MyState.new))`) before it enters the Hako. Alternatively, you can use the `mapStream<T, S>` helper below to handle the translation natively.
+
+#### 2. `mapStream<T, S>()`: Mapping Stream to State
+Use `mapStream<T, S>` when incoming stream data of type `T` needs to be mapped to a registered state structure `S`.
+
+* **Intentful Mapping:** Transforms `Stream<T>` to `State<S>` via a required `mapper` callback.
 * **Guaranteed Cleanup:** The subscription is registered internally and automatically canceled when the Hako is destroyed.
 
 ```dart
@@ -137,16 +145,18 @@ class ChatHako extends IKondoHako<ChatInteractor> {
           register(const ChatMessagesSectionState([]));
           register(const ConnectionSectionState(isOnline: false));
         }) {
-    // 1. Direct state replacement
-    connectStream<ConnectionSectionState>(
-      stream: interactor.getConnectionStatusStream().map(ConnectionSectionState.new),
+        
+    // 1. Direct state replacement with mapping
+    mapStream<bool, ConnectionSectionState>(
+      stream: interactor.getConnectionStatusStream(),
+      mapper: (_, isOnline) => ConnectionSectionState(isOnline: isOnline),
     );
 
-    // 2. Incremental state transformation (merging incoming state)
-    connectStream<ChatMessagesSectionState>(
-      stream: interactor.getIncomingMessagesStream().map(ChatMessagesSectionState.new),
-      onEvent: (currentState, incomingState) => currentState.copyWith(
-        messages: [...currentState.messages, ...incomingState.messages],
+    // 2. Incremental state transformation (merging incoming stream mapped to state)
+    mapStream<List<Message>, ChatMessagesSectionState>(
+      stream: interactor.getIncomingMessagesStream(),
+      mapper: (currentState, incomingMessages) => currentState.copyWith(
+        messages: [...currentState.messages, ...incomingMessages],
       ),
       onError: (error) => debugPrint('Stream error: $error'),
     );
@@ -154,7 +164,7 @@ class ChatHako extends IKondoHako<ChatInteractor> {
 }
 ```
 
-#### 2. `listenStream<T>()`: Handling Reactive Side Effects
+#### 3. `listenStream<T>()`: Handling Reactive Side Effects
 Use `listenStream<T>` when you want to listen to a stream for custom handling, side effects, or complex conditional updates rather than directly replacing a state type.
 
 ```dart

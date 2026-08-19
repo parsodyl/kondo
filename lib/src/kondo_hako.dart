@@ -110,6 +110,38 @@ abstract class KondoHako extends BaseHako {
     _subscriptions.add(subscription);
   }
 
+  /// Maps a stream of type [T] to the Hako's state of type [S].
+  ///
+  /// This helper method subscribes to a [stream] and uses the [mapper] function
+  /// to transform incoming events (and the current state) into a new state.
+  /// The subscription is managed internally and will be automatically cancelled
+  /// when the Hako is disposed.
+  ///
+  /// The ideal place to call this method is in the Hako's constructor for
+  /// immediate subscription, or in [onReady] if you want to ensure the first
+  /// frame is rendered before starting the subscription.
+  ///
+  /// By design, individual subscriptions cannot be canceled independently —
+  /// all stream lifecycle management is unified and handled internally when
+  /// the Hako is disposed.
+  void mapStream<T, S>({
+    required Stream<T> stream,
+    required S Function(S current, T event) mapper,
+    Function? onError,
+    void Function()? onDone,
+    String? name,
+  }) {
+    final subscription = stream.listen(
+      (event) => set<S>(
+        (current) => mapper(current, event),
+        name: name,
+      ),
+      onError: onError,
+      onDone: onDone,
+    );
+    _subscriptions.add(subscription);
+  }
+
   /// Listens to a stream without automatically updating state.
   ///
   /// This helper method subscribes to a [stream] and invokes the [onData]
