@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kondo/kondo.dart';
+import 'package:provider/provider.dart';
 
 // --- Test State ---
 
@@ -141,11 +142,75 @@ void main() {
 
       expect(createdHako.wasDisposed, isTrue);
     });
+
+    testWidgets('calls onReady when used without builder inside MultiProvider',
+        (tester) async {
+      late TestKondoHako readHako;
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            KondoProvider<TestKondoHako>(
+              createHako: (_) => TestKondoHako(),
+            ),
+          ],
+          child: Builder(
+            builder: (context) {
+              readHako = context.readHako<TestKondoHako>();
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(readHako.onReadyCalled, isTrue);
+      expect(readHako.onReadyCallCount, 1);
+    });
+
+    testWidgets(
+        'does NOT call onReady if unmounted before post-frame callback runs',
+        (tester) async {
+      late TestKondoHako createdHako;
+      final showProvider = ValueNotifier<bool>(true);
+      addTearDown(showProvider.dispose);
+
+      // Register a post-frame callback BEFORE KondoProvider mounts so that it
+      // runs first in the post-frame queue and unmounts the widget tree before
+      // _ReadyWidget's post-frame callback checks `context.mounted`.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showProvider.value = false;
+        tester.binding.buildOwner!
+          ..buildScope(tester.binding.rootElement!)
+          ..finalizeTree();
+      });
+
+      await tester.pumpWidget(
+        ValueListenableBuilder<bool>(
+          valueListenable: showProvider,
+          builder: (context, show, _) {
+            if (!show) return const SizedBox();
+            return KondoProvider<TestKondoHako>(
+              createHako: (_) {
+                createdHako = TestKondoHako();
+                return createdHako;
+              },
+              builder: (_) => const SizedBox(),
+            );
+          },
+        ),
+      );
+
+      expect(createdHako.onReadyCalled, isFalse);
+      expect(createdHako.wasDisposed, isTrue);
+    });
   });
 
   group('KondoProvider.value', () {
     testWidgets('provides existing hako to descendants', (tester) async {
       final existingHako = TestKondoHako();
+      addTearDown(existingHako.dispose);
 
       late TestKondoHako readHako;
       await tester.pumpWidget(
@@ -159,6 +224,85 @@ void main() {
       );
 
       expect(readHako, same(existingHako));
+    });
+
+    testWidgets('calls hako.onReady after first frame by default',
+        (tester) async {
+      final existingHako = TestKondoHako();
+      addTearDown(existingHako.dispose);
+
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>.value(
+          value: existingHako,
+          builder: (_) => const SizedBox(),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(existingHako.onReadyCalled, isTrue);
+      expect(existingHako.onReadyCallCount, 1);
+    });
+
+    testWidgets('custom onReady replaces default hako.onReady', (tester) async {
+      final existingHako = TestKondoHako();
+      addTearDown(existingHako.dispose);
+      var customOnReadyCalled = false;
+
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>.value(
+          value: existingHako,
+          onReady: (hako) {
+            customOnReadyCalled = true;
+          },
+          builder: (_) => const SizedBox(),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(customOnReadyCalled, isTrue);
+      expect(existingHako.onReadyCalled, isFalse);
+    });
+
+    testWidgets('skipReady prevents any onReady call', (tester) async {
+      final existingHako = TestKondoHako();
+      addTearDown(existingHako.dispose);
+
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>.value(
+          value: existingHako,
+          skipReady: true,
+          builder: (_) => const SizedBox(),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump();
+
+      expect(existingHako.onReadyCalled, isFalse);
+    });
+
+    testWidgets('calls onReady when used without builder inside MultiProvider',
+        (tester) async {
+      final existingHako = TestKondoHako();
+      addTearDown(existingHako.dispose);
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            KondoProvider<TestKondoHako>.value(
+              value: existingHako,
+            ),
+          ],
+          child: const SizedBox(),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(existingHako.onReadyCalled, isTrue);
+      expect(existingHako.onReadyCallCount, 1);
     });
 
     testWidgets('does NOT dispose hako when removed from tree', (tester) async {

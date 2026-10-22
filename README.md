@@ -18,7 +18,7 @@ gracefully into adjacent layers.
 
 <br/>
 <p align="center">
-  <img alt="The Kondo Layer fades gracefully between the UI layer and the Data layer." src="images/kondo_layer.png" title="Kondo Layer"/>
+  <img alt="The Kondo Layer fades gracefully between the UI layer and the Data layer." src="https://raw.githubusercontent.com/parsodyl/kondo/main/images/kondo_layer.png" title="Kondo Layer"/>
 </p>
 
 ---
@@ -76,7 +76,7 @@ The following diagram illustrates the flow of data and interactions within the K
 
 <br/>
 <p align="center">
-  <img alt="The Kondo Triad components and their interactions across architectural layers." src="images/kondo_triad_diagram.png" title="Kondo Triad Architecture"/>
+  <img alt="The Kondo Triad components and their interactions across architectural layers." src="https://raw.githubusercontent.com/parsodyl/kondo/main/images/kondo_triad_diagram.png" title="Kondo Triad Architecture"/>
 </p>
 <br/>
 
@@ -217,6 +217,12 @@ class CounterHako extends IRKondoHako<CounterInteractor, CounterReactor> {
           register(const CounterSectionState(0));
         });
 
+  @override
+  Future<void> onReady() async {
+    // Optional post-frame lifecycle hook: runs automatically after the first
+    // frame renders. Ideal for initial async fetches or startup dialogs!
+  }
+
   Future<void> onIncrementTap() async {
     final currentCount = get<CounterSectionState>().count;
     
@@ -300,7 +306,15 @@ class CounterPage extends StatelessWidget {
 }
 ```
 
-> **Note:** The full, runnable source code for this example is available in the [`example/lib/main.dart`](example/lib/main.dart) file of this repository.
+> **Note:** The full, runnable source code for this example is available in the [`example/lib/main.dart`](https://github.com/parsodyl/kondo/blob/main/example/lib/main.dart) file of this repository.
+
+### Lifecycle Hook: `onReady()` ⏳
+
+Every `KondoHako` exposes an `onReady()` lifecycle method that `KondoProvider` automatically invokes **after the first frame is rendered** (via `addPostFrameCallback`):
+
+* **Constructor:** Keep synchronous and declarative—register initial states (`register<T>(...)`) and bind state streams (`connectStream`, `mapStream`).
+* **`onReady()`:** Execute asynchronous startup fetches, initial data loading, or startup UI side effects (such as dialogs, bottom sheets, or scroll actions) when the widget tree is guaranteed to be mounted.
+* **Customizing in `KondoProvider`:** You can override the default hook per-screen using `onReady: (hako) => ...`, or suppress it entirely via `skipReady: true` (useful in widget tests).
 
 ---
 
@@ -414,6 +428,8 @@ Down in your view's `KondoProvider`, you provide the context dynamically using a
 ```
 This pattern permanently ensures UI boundaries are respected, making your Reactions fully unit-testable while completely eradicating memory leak context crashes.
 
+> **Important (`BuildContext` Scope):** The `context` passed to `createHako: (context)` belongs to the `KondoProvider` widget itself, which sits **above** the widgets returned in `builder: (context)` (such as a local `Scaffold`). This `context` can safely resolve ancestor widgets like `Navigator`, `Theme`, `MediaQuery`, or `AppLocalizations`, but cannot look up descendant widgets created inside `builder`.
+
 ---
 
 ## Safely Subscribing to Streams 🌊
@@ -447,11 +463,11 @@ class ChatroomInteractor {
 ```
 
 ### 3. The Hako (The Orchestrator)
-Inside your Hako constructor, you hook into the Interactor using one of three native helpers: `connectStream`, `mapStream`, OR `listenStream`. The Hako implicitly captures the stream, binds it, and automatically destroys it securely when the UI route is popped.
+Inside your Hako, you hook into the Interactor using one of three native helpers: `connectStream`, `mapStream`, OR `listenStream`. The Hako implicitly captures the stream, binds it, and automatically destroys it securely when the UI route is popped.
 
 *   **`connectStream<T>`**: Use this when your stream type exactly matches your state type (1:1 direct pipe). Because reusing domain objects as Hako state slices is not recommended, it is very common to map the stream inline (e.g., `stream.map(MyState.new)`) when using this method.
 *   **`mapStream<T, S>`**: Use this when you want to map an incoming stream of type `T` into a tracked `Semantic Section` State of type `S`.
-*   **`listenStream`**: Use this when you need varying side-effects or heavy logic execution (like re-initializing another endpoint).
+*   **`listenStream`**: Use this when you need varying side-effects or heavy logic execution (like re-initializing another endpoint). When a listener triggers UI side effects on the `reactor`, register it in `onReady()` so that immediate stream emissions never fire before the first frame is mounted.
 
 ```dart
 class ChatroomHako extends IRKondoHako<ChatroomInteractor, ChatroomReactor> {
@@ -474,8 +490,11 @@ class ChatroomHako extends IRKondoHako<ChatroomInteractor, ChatroomReactor> {
       stream: interactor.getChatBubbleStream(),
       mapper: (_, chatBubbles) => ChatFeedState(chatBubbles),
     );
+  }
 
-    // METHOD C: Logic Execution (Triggers complex functions on data updates)
+  @override
+  Future<void> onReady() async {
+    // METHOD C: Logic Execution (Triggers UI side effects once the View is mounted)
     listenStream(
       stream: interactor.getTypingIndicatorStream(),
       onData: (isTyping) {

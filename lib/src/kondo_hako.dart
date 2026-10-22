@@ -92,6 +92,9 @@ abstract class KondoHako extends BaseHako {
   /// By design, individual subscriptions cannot be canceled independently —
   /// all stream lifecycle management is unified and handled internally when
   /// the Hako is disposed.
+  ///
+  /// If provided, [onError] must be of type `void Function(Object error)` or
+  /// `void Function(Object error, StackTrace stackTrace)`.
   void connectStream<T>({
     required Stream<T> stream,
     T Function(T current, T event)? onEvent,
@@ -124,6 +127,9 @@ abstract class KondoHako extends BaseHako {
   /// By design, individual subscriptions cannot be canceled independently —
   /// all stream lifecycle management is unified and handled internally when
   /// the Hako is disposed.
+  ///
+  /// If provided, [onError] must be of type `void Function(Object error)` or
+  /// `void Function(Object error, StackTrace stackTrace)`.
   void mapStream<T, S>({
     required Stream<T> stream,
     required S Function(S current, T event) mapper,
@@ -157,6 +163,9 @@ abstract class KondoHako extends BaseHako {
   /// By design, individual subscriptions cannot be canceled independently —
   /// all stream lifecycle management is unified and handled internally when
   /// the Hako is disposed.
+  ///
+  /// If provided, [onError] must be of type `void Function(Object error)` or
+  /// `void Function(Object error, StackTrace stackTrace)`.
   void listenStream<T>({
     required Stream<T> stream,
     required void Function(T event) onData,

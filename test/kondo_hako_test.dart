@@ -42,26 +42,58 @@ class TestKondoHako extends KondoHako {
     set<CounterState>((_) => CounterState(value));
   }
 
-  void connectToStream(Stream<CounterState> stream) {
-    connectStream<CounterState>(stream: stream);
+  void connectToStream(
+    Stream<CounterState> stream, {
+    Function? onError,
+    void Function()? onDone,
+  }) {
+    connectStream<CounterState>(
+      stream: stream,
+      onError: onError,
+      onDone: onDone,
+    );
   }
 
   void connectToStreamWithMerger(
     Stream<CounterState> stream,
-    CounterState Function(CounterState current, CounterState event) merger,
-  ) {
-    connectStream<CounterState>(stream: stream, onEvent: merger);
+    CounterState Function(CounterState current, CounterState event) merger, {
+    Function? onError,
+    void Function()? onDone,
+  }) {
+    connectStream<CounterState>(
+      stream: stream,
+      onEvent: merger,
+      onError: onError,
+      onDone: onDone,
+    );
   }
 
-  void listenToStream<T>(Stream<T> stream, void Function(T) onData) {
-    listenStream<T>(stream: stream, onData: onData);
+  void listenToStream<T>(
+    Stream<T> stream,
+    void Function(T) onData, {
+    Function? onError,
+    void Function()? onDone,
+  }) {
+    listenStream<T>(
+      stream: stream,
+      onData: onData,
+      onError: onError,
+      onDone: onDone,
+    );
   }
 
   void mapStreamToState<T, S>(
     Stream<T> stream,
-    S Function(S current, T event) mapper,
-  ) {
-    mapStream<T, S>(stream: stream, mapper: mapper);
+    S Function(S current, T event) mapper, {
+    Function? onError,
+    void Function()? onDone,
+  }) {
+    mapStream<T, S>(
+      stream: stream,
+      mapper: mapper,
+      onError: onError,
+      onDone: onDone,
+    );
   }
 }
 
@@ -192,6 +224,31 @@ void main() {
 
       await controller.close();
     });
+
+    test('forwards errors and completion to onError and onDone', () async {
+      final hako = TestKondoHako();
+      final controller = StreamController<CounterState>();
+      Object? capturedError;
+      var doneCalled = false;
+
+      hako.connectToStream(
+        controller.stream,
+        onError: (Object error) => capturedError = error,
+        onDone: () => doneCalled = true,
+      );
+
+      controller.addError(StateError('stream failure'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(capturedError, isA<StateError>());
+      expect(doneCalled, isFalse);
+
+      await controller.close();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(doneCalled, isTrue);
+      hako.dispose();
+    });
   });
 
   group('mapStream', () {
@@ -231,6 +288,32 @@ void main() {
       expect(controller.hasListener, isFalse);
 
       await controller.close();
+    });
+
+    test('forwards errors and completion to onError and onDone', () async {
+      final hako = TestKondoHako();
+      final controller = StreamController<int>();
+      Object? capturedError;
+      var doneCalled = false;
+
+      hako.mapStreamToState<int, CounterState>(
+        controller.stream,
+        (current, event) => CounterState(event),
+        onError: (Object error) => capturedError = error,
+        onDone: () => doneCalled = true,
+      );
+
+      controller.addError(StateError('map failure'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(capturedError, isA<StateError>());
+      expect(doneCalled, isFalse);
+
+      await controller.close();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(doneCalled, isTrue);
+      hako.dispose();
     });
   });
 
@@ -272,6 +355,32 @@ void main() {
       expect(controller.hasListener, isFalse);
 
       await controller.close();
+    });
+
+    test('forwards errors and completion to onError and onDone', () async {
+      final hako = TestKondoHako();
+      final controller = StreamController<int>();
+      Object? capturedError;
+      var doneCalled = false;
+
+      hako.listenToStream<int>(
+        controller.stream,
+        (_) {},
+        onError: (Object error) => capturedError = error,
+        onDone: () => doneCalled = true,
+      );
+
+      controller.addError(StateError('listen failure'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(capturedError, isA<StateError>());
+      expect(doneCalled, isFalse);
+
+      await controller.close();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(doneCalled, isTrue);
+      hako.dispose();
     });
   });
 

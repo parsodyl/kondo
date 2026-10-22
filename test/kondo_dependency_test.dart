@@ -43,6 +43,15 @@ void main() {
 
       expect(resolver.resolve<FakeService>().name, 'test');
     });
+
+    test('resolve throws StateError for unregistered type', () {
+      final resolver = FakeDependencyResolver();
+
+      expect(
+        () => resolver.resolve<FakeService>(),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 
   group('KondoDependencyProvider', () {
@@ -139,6 +148,23 @@ void main() {
       );
 
       expect(resolved.name, 'via-extension');
+    });
+
+    testWidgets(
+        'throws ProviderNotFoundException when called outside KondoDependencyProvider',
+        (tester) async {
+      late BuildContext capturedContext;
+      await tester.pumpWidget(
+        Builder(builder: (context) {
+          capturedContext = context;
+          return const SizedBox();
+        }),
+      );
+
+      expect(
+        () => capturedContext.resolveDependency<FakeService>(),
+        throwsA(isA<ProviderNotFoundException>()),
+      );
     });
   });
 }

@@ -89,16 +89,29 @@ typedef OnKondoReady<H extends KondoHako> = FutureOr<void> Function(H hako);
 class KondoProvider<H extends KondoHako> extends HakoProvider<H> {
   KondoProvider._create({
     required super.create,
-    super.child,
+    required WidgetBuilder? builder,
+    required OnKondoReady<H>? onReady,
+    required bool skipReady,
     super.lazy,
     super.key,
-  });
+  })  : _builder = builder,
+        _onReady = onReady,
+        _skipReady = skipReady;
 
   KondoProvider._value({
     required super.value,
-    super.child,
+    required WidgetBuilder? builder,
+    required OnKondoReady<H>? onReady,
+    required bool skipReady,
     super.key,
-  }) : super.value();
+  })  : _builder = builder,
+        _onReady = onReady,
+        _skipReady = skipReady,
+        super.value();
+
+  final WidgetBuilder? _builder;
+  final OnKondoReady<H>? _onReady;
+  final bool _skipReady;
 
   /// Creates a [KondoProvider] that creates and provides a [KondoHako]
   /// instance to its descendants.
@@ -119,11 +132,9 @@ class KondoProvider<H extends KondoHako> extends HakoProvider<H> {
         key: key,
         lazy: !skipReady ? false : (lazy ?? true),
         create: createHako,
-        child: !skipReady && builder != null
-            ? _ReadyWidget(onReady: onReady, builder: builder)
-            : builder != null
-                ? Builder(builder: builder)
-                : null,
+        builder: builder,
+        onReady: onReady,
+        skipReady: skipReady,
       );
 
   /// Provides an existing [KondoHako] instance to descendant widgets.
@@ -137,12 +148,26 @@ class KondoProvider<H extends KondoHako> extends HakoProvider<H> {
       KondoProvider._value(
         key: key,
         value: value,
-        child: !skipReady && builder != null
-            ? _ReadyWidget(onReady: onReady, builder: builder)
-            : builder != null
-                ? Builder(builder: builder)
-                : null,
+        builder: builder,
+        onReady: onReady,
+        skipReady: skipReady,
       );
+
+  @override
+  TransitionBuilder? get builder => (context, child) {
+        assert(
+          _builder != null || child != null,
+          '$runtimeType used outside of MultiProvider must specify a builder',
+        );
+        final effectiveBuilder = _builder ?? (_) => child!;
+        if (_skipReady) {
+          return effectiveBuilder(context);
+        }
+        return _ReadyWidget<H>(
+          onReady: _onReady,
+          builder: effectiveBuilder,
+        );
+      };
 }
 
 class _ReadyWidget<H extends KondoHako> extends StatefulWidget {
