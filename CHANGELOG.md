@@ -1,3 +1,11 @@
+## 0.0.4
+
+* **KondoProvider**: Added full support for `onReady` callbacks when used inside `MultiProvider`.
+* **KondoHako**: Added optional `name` parameter to `connectStream` and `mapStream` for targeting named state containers.
+* **Dependencies**: Upgraded `hako` dependency constraint to `^0.1.1`.
+* **Testing**: Modernized test suite using `hako_test` and expanded test coverage to 100% (covering lazy loading, assert guards, and multi-stream cancellation).
+* **Documentation**: Replaced PNG architectural diagrams with sanitized SVGs and updated state ownership guides.
+
 ## 0.0.3
 
 * Added `mapStream<T, S>` method to `KondoHako` for mapping stream events directly to state mutations with automated subscription management.
