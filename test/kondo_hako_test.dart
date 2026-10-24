@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hako_test/hako_test.dart';
 import 'package:kondo/kondo.dart';
 
 // --- Test State ---
@@ -22,6 +23,41 @@ class FakeReactor {
 }
 
 // --- Test Hakos ---
+
+class DefaultKondoHako extends KondoHako {
+  DefaultKondoHako()
+      : super((register) {
+          register<CounterState>(const CounterState(0));
+        });
+}
+
+class NamedStateKondoHako extends KondoHako {
+  NamedStateKondoHako()
+      : super((register) {
+          register<CounterState>(
+            const CounterState(0),
+            name: 'custom_connect_stream',
+          );
+          register<CounterState>(
+            const CounterState(0),
+            name: 'custom_map_stream',
+          );
+        });
+
+  CounterState getNamedState(String name) => get<CounterState>(name: name);
+
+  void connectNamed(Stream<CounterState> stream, String name) {
+    connectStream<CounterState>(stream: stream, name: name);
+  }
+
+  void mapNamed(Stream<int> stream, String name) {
+    mapStream<int, CounterState>(
+      stream: stream,
+      mapper: (current, event) => CounterState(event),
+      name: name,
+    );
+  }
+}
 
 class TestKondoHako extends KondoHako {
   TestKondoHako()
@@ -46,11 +82,13 @@ class TestKondoHako extends KondoHako {
     Stream<CounterState> stream, {
     Function? onError,
     void Function()? onDone,
+    String? name,
   }) {
     connectStream<CounterState>(
       stream: stream,
       onError: onError,
       onDone: onDone,
+      name: name,
     );
   }
 
@@ -59,12 +97,14 @@ class TestKondoHako extends KondoHako {
     CounterState Function(CounterState current, CounterState event) merger, {
     Function? onError,
     void Function()? onDone,
+    String? name,
   }) {
     connectStream<CounterState>(
       stream: stream,
       onEvent: merger,
       onError: onError,
       onDone: onDone,
+      name: name,
     );
   }
 
@@ -87,12 +127,14 @@ class TestKondoHako extends KondoHako {
     S Function(S current, T event) mapper, {
     Function? onError,
     void Function()? onDone,
+    String? name,
   }) {
     mapStream<T, S>(
       stream: stream,
       mapper: mapper,
       onError: onError,
       onDone: onDone,
+      name: name,
     );
   }
 }
@@ -130,25 +172,43 @@ class TestIRKondoHako extends IRKondoHako<FakeInteractor, FakeReactor> {
 
 void main() {
   group('KondoHako', () {
-    test('registers and retrieves state', () {
-      final hako = TestKondoHako();
-      expect(hako.getCounterState().count, 0);
-      hako.dispose();
-    });
+    hakoTest<TestKondoHako>(
+      'registers and retrieves state',
+      build: () => TestKondoHako(),
+      verify: (hako) {
+        expect(hako.getCounterState().count, 0);
+      },
+    );
 
-    test('updates state via set', () {
-      final hako = TestKondoHako();
-      hako.updateCounter(5);
-      expect(hako.getCounterState().count, 5);
-      hako.dispose();
-    });
+    hakoTest<TestKondoHako>(
+      'updates state via set',
+      build: () => TestKondoHako(),
+      act: (hako) => hako.updateCounter(5),
+      expect: () => [
+        isSetEvent<CounterState>(),
+      ],
+      verify: (hako) {
+        expect(hako.getCounterState().count, 5);
+      },
+    );
 
-    test('onReady is callable', () {
-      final hako = TestKondoHako();
-      hako.onReady();
-      expect(hako.onReadyCalled, isTrue);
-      hako.dispose();
-    });
+    hakoTest<TestKondoHako>(
+      'onReady is callable and triggers overridden callback',
+      build: () => TestKondoHako(),
+      act: (hako) => hako.onReady(),
+      verify: (hako) {
+        expect(hako.onReadyCalled, isTrue);
+      },
+    );
+
+    hakoTest<DefaultKondoHako>(
+      'default base onReady executes without error',
+      build: () => DefaultKondoHako(),
+      act: (hako) => hako.onReady(),
+      verify: (hako) {
+        expect(hako.get<CounterState>().count, 0);
+      },
+    );
 
     test('calling set after dispose updates container value without error', () {
       final hako = TestKondoHako();
@@ -175,43 +235,65 @@ void main() {
   });
 
   group('connectStream', () {
-    test('updates state when stream emits', () async {
-      final hako = TestKondoHako();
-      final controller = StreamController<CounterState>();
+    hakoTest<TestKondoHako>(
+      'updates state when stream emits',
+      build: () => TestKondoHako(),
+      act: (hako) async {
+        final controller = StreamController<CounterState>();
+        hako.connectToStream(controller.stream);
+        controller.add(const CounterState(42));
+        await Future<void>.delayed(Duration.zero);
+        await controller.close();
+      },
+      expect: () => [
+        isSetEvent<CounterState>(),
+      ],
+      verify: (hako) {
+        expect(hako.getCounterState().count, 42);
+      },
+    );
 
-      hako.connectToStream(controller.stream);
+    hakoTest<NamedStateKondoHako>(
+      'tags SetEvent with name when name parameter is provided',
+      build: () => NamedStateKondoHako(),
+      act: (hako) async {
+        final controller = StreamController<CounterState>();
+        hako.connectNamed(controller.stream, 'custom_connect_stream');
+        controller.add(const CounterState(99));
+        await Future<void>.delayed(Duration.zero);
+        await controller.close();
+      },
+      expect: () => [
+        isSetEvent<CounterState>(name: 'custom_connect_stream'),
+      ],
+      verify: (hako) {
+        expect(hako.getNamedState('custom_connect_stream').count, 99);
+      },
+    );
 
-      controller.add(const CounterState(42));
-      await Future<void>.delayed(Duration.zero);
-
-      expect(hako.getCounterState().count, 42);
-
-      await controller.close();
-      hako.dispose();
-    });
-
-    test('uses onEvent merger when provided', () async {
-      final hako = TestKondoHako();
-      final controller = StreamController<CounterState>();
-
-      hako.connectToStreamWithMerger(
-        controller.stream,
-        (current, event) => CounterState(current.count + event.count),
-      );
-
-      controller.add(const CounterState(10));
-      await Future<void>.delayed(Duration.zero);
-
-      expect(hako.getCounterState().count, 10);
-
-      controller.add(const CounterState(5));
-      await Future<void>.delayed(Duration.zero);
-
-      expect(hako.getCounterState().count, 15);
-
-      await controller.close();
-      hako.dispose();
-    });
+    hakoTest<TestKondoHako>(
+      'uses onEvent merger when provided',
+      build: () => TestKondoHako(),
+      act: (hako) async {
+        final controller = StreamController<CounterState>();
+        hako.connectToStreamWithMerger(
+          controller.stream,
+          (current, event) => CounterState(current.count + event.count),
+        );
+        controller.add(const CounterState(10));
+        await Future<void>.delayed(Duration.zero);
+        controller.add(const CounterState(5));
+        await Future<void>.delayed(Duration.zero);
+        await controller.close();
+      },
+      expect: () => [
+        isSetEvent<CounterState>(),
+        isSetEvent<CounterState>(),
+      ],
+      verify: (hako) {
+        expect(hako.getCounterState().count, 15);
+      },
+    );
 
     test('cancels subscription on dispose', () async {
       final hako = TestKondoHako();
@@ -249,31 +331,77 @@ void main() {
       expect(doneCalled, isTrue);
       hako.dispose();
     });
-  });
 
-  group('mapStream', () {
-    test('updates state using mapper when stream emits', () async {
+    test('forwards error and stackTrace when onError accepts two arguments',
+        () async {
       final hako = TestKondoHako();
-      final controller = StreamController<int>();
+      final controller = StreamController<CounterState>();
+      Object? capturedError;
+      StackTrace? capturedStackTrace;
 
-      hako.mapStreamToState<int, CounterState>(
+      hako.connectToStream(
         controller.stream,
-        (current, event) => CounterState(current.count + event),
+        onError: (Object error, StackTrace stackTrace) {
+          capturedError = error;
+          capturedStackTrace = stackTrace;
+        },
       );
 
-      controller.add(10);
+      final error = StateError('stream failure with stack');
+      final stackTrace = StackTrace.current;
+      controller.addError(error, stackTrace);
       await Future<void>.delayed(Duration.zero);
 
-      expect(hako.getCounterState().count, 10);
-
-      controller.add(5);
-      await Future<void>.delayed(Duration.zero);
-
-      expect(hako.getCounterState().count, 15);
+      expect(capturedError, same(error));
+      expect(capturedStackTrace, same(stackTrace));
 
       await controller.close();
       hako.dispose();
     });
+  });
+
+  group('mapStream', () {
+    hakoTest<TestKondoHako>(
+      'updates state using mapper when stream emits',
+      build: () => TestKondoHako(),
+      act: (hako) async {
+        final controller = StreamController<int>();
+        hako.mapStreamToState<int, CounterState>(
+          controller.stream,
+          (current, event) => CounterState(current.count + event),
+        );
+        controller.add(10);
+        await Future<void>.delayed(Duration.zero);
+        controller.add(5);
+        await Future<void>.delayed(Duration.zero);
+        await controller.close();
+      },
+      expect: () => [
+        isSetEvent<CounterState>(),
+        isSetEvent<CounterState>(),
+      ],
+      verify: (hako) {
+        expect(hako.getCounterState().count, 15);
+      },
+    );
+
+    hakoTest<NamedStateKondoHako>(
+      'tags SetEvent with name when name parameter is provided',
+      build: () => NamedStateKondoHako(),
+      act: (hako) async {
+        final controller = StreamController<int>();
+        hako.mapNamed(controller.stream, 'custom_map_stream');
+        controller.add(77);
+        await Future<void>.delayed(Duration.zero);
+        await controller.close();
+      },
+      expect: () => [
+        isSetEvent<CounterState>(name: 'custom_map_stream'),
+      ],
+      verify: (hako) {
+        expect(hako.getNamedState('custom_map_stream').count, 77);
+      },
+    );
 
     test('cancels subscription on dispose', () async {
       final hako = TestKondoHako();
@@ -313,6 +441,34 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(doneCalled, isTrue);
+      hako.dispose();
+    });
+
+    test('forwards error and stackTrace when onError accepts two arguments',
+        () async {
+      final hako = TestKondoHako();
+      final controller = StreamController<int>();
+      Object? capturedError;
+      StackTrace? capturedStackTrace;
+
+      hako.mapStreamToState<int, CounterState>(
+        controller.stream,
+        (current, event) => CounterState(event),
+        onError: (Object error, StackTrace stackTrace) {
+          capturedError = error;
+          capturedStackTrace = stackTrace;
+        },
+      );
+
+      final error = StateError('map failure with stack');
+      final stackTrace = StackTrace.current;
+      controller.addError(error, stackTrace);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(capturedError, same(error));
+      expect(capturedStackTrace, same(stackTrace));
+
+      await controller.close();
       hako.dispose();
     });
   });
@@ -382,93 +538,138 @@ void main() {
       expect(doneCalled, isTrue);
       hako.dispose();
     });
+
+    test('forwards error and stackTrace when onError accepts two arguments',
+        () async {
+      final hako = TestKondoHako();
+      final controller = StreamController<int>();
+      Object? capturedError;
+      StackTrace? capturedStackTrace;
+
+      hako.listenToStream<int>(
+        controller.stream,
+        (_) {},
+        onError: (Object error, StackTrace stackTrace) {
+          capturedError = error;
+          capturedStackTrace = stackTrace;
+        },
+      );
+
+      final error = StateError('listen failure with stack');
+      final stackTrace = StackTrace.current;
+      controller.addError(error, stackTrace);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(capturedError, same(error));
+      expect(capturedStackTrace, same(stackTrace));
+
+      await controller.close();
+      hako.dispose();
+    });
+  });
+
+  group('Multiple stream subscriptions cleanup', () {
+    test('cancels all subscriptions of any type on dispose', () async {
+      final hako = TestKondoHako();
+      final c1 = StreamController<CounterState>();
+      final c2 = StreamController<int>();
+      final c3 = StreamController<String>();
+
+      hako.connectToStream(c1.stream);
+      hako.mapStreamToState<int, CounterState>(
+        c2.stream,
+        (current, event) => CounterState(event),
+      );
+      hako.listenToStream<String>(c3.stream, (_) {});
+
+      expect(c1.hasListener, isTrue);
+      expect(c2.hasListener, isTrue);
+      expect(c3.hasListener, isTrue);
+
+      hako.dispose();
+
+      expect(c1.hasListener, isFalse);
+      expect(c2.hasListener, isFalse);
+      expect(c3.hasListener, isFalse);
+
+      await c1.close();
+      await c2.close();
+      await c3.close();
+    });
   });
 
   group('IKondoHako', () {
-    test('exposes interactor', () {
-      final interactor = FakeInteractor();
-      final hako = TestIKondoHako(interactor: interactor);
+    final interactor = FakeInteractor();
 
-      expect(hako.interactor, same(interactor));
-      hako.dispose();
-    });
+    hakoTest<TestIKondoHako>(
+      'exposes interactor',
+      build: () => TestIKondoHako(interactor: interactor),
+      verify: (hako) {
+        expect(hako.interactor, same(interactor));
+      },
+    );
 
-    test('emits InteractorEvent on interactor access', () {
-      final hako = TestIKondoHako(interactor: FakeInteractor());
-      final stream = hako.openEventStream();
-
-      hako.interactor;
-      hako.closeEventStream();
-
-      expect(
-        stream,
-        emitsInOrder([
-          isA<InteractorEvent>(),
-          emitsDone,
-        ]),
-      );
-    });
+    hakoTest<TestIKondoHako>(
+      'emits InteractorEvent on interactor access',
+      build: () => TestIKondoHako(interactor: FakeInteractor()),
+      act: (hako) => hako.interactor,
+      expect: () => [
+        isA<InteractorEvent>(),
+      ],
+    );
   });
 
   group('RKondoHako', () {
-    test('exposes reactor', () {
-      final reactor = FakeReactor();
-      final hako = TestRKondoHako(reactor: reactor);
+    final reactor = FakeReactor();
 
-      expect(hako.reactor, same(reactor));
-      hako.dispose();
-    });
+    hakoTest<TestRKondoHako>(
+      'exposes reactor',
+      build: () => TestRKondoHako(reactor: reactor),
+      verify: (hako) {
+        expect(hako.reactor, same(reactor));
+      },
+    );
 
-    test('emits ReactorEvent on reactor access', () {
-      final hako = TestRKondoHako(reactor: FakeReactor());
-      final stream = hako.openEventStream();
-
-      hako.reactor;
-      hako.closeEventStream();
-
-      expect(
-        stream,
-        emitsInOrder([
-          isA<ReactorEvent>(),
-          emitsDone,
-        ]),
-      );
-    });
+    hakoTest<TestRKondoHako>(
+      'emits ReactorEvent on reactor access',
+      build: () => TestRKondoHako(reactor: FakeReactor()),
+      act: (hako) => hako.reactor,
+      expect: () => [
+        isA<ReactorEvent>(),
+      ],
+    );
   });
 
   group('IRKondoHako', () {
-    test('exposes both interactor and reactor', () {
-      final interactor = FakeInteractor();
-      final reactor = FakeReactor();
-      final hako = TestIRKondoHako(
+    final interactor = FakeInteractor();
+    final reactor = FakeReactor();
+
+    hakoTest<TestIRKondoHako>(
+      'exposes both interactor and reactor',
+      build: () => TestIRKondoHako(
         interactor: interactor,
         reactor: reactor,
-      );
+      ),
+      verify: (hako) {
+        expect(hako.interactor, same(interactor));
+        expect(hako.reactor, same(reactor));
+      },
+    );
 
-      expect(hako.interactor, same(interactor));
-      expect(hako.reactor, same(reactor));
-      hako.dispose();
-    });
-
-    test('emits correct events for each getter', () {
-      final hako = TestIRKondoHako(
+    hakoTest<TestIRKondoHako>(
+      'emits correct events for each getter in order',
+      build: () => TestIRKondoHako(
         interactor: FakeInteractor(),
         reactor: FakeReactor(),
-      );
-      final stream = hako.openEventStream();
-
-      hako.interactor;
-      hako.reactor;
-      hako.closeEventStream();
-
-      expect(
-        stream,
-        emitsInOrder([
-          isA<InteractorEvent>(),
-          isA<ReactorEvent>(),
-          emitsDone,
-        ]),
-      );
-    });
+      ),
+      act: (hako) {
+        hako.interactor;
+        hako.reactor;
+      },
+      expect: () => [
+        isA<InteractorEvent>(),
+        isA<ReactorEvent>(),
+      ],
+    );
   });
 }

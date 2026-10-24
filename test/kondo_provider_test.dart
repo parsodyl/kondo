@@ -322,5 +322,100 @@ void main() {
       // Clean up manually since the provider didn't dispose it.
       existingHako.dispose();
     });
+
+    testWidgets(
+        'throws AssertionError when used outside MultiProvider without builder or child',
+        (tester) async {
+      final existingHako = TestKondoHako();
+
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>.value(
+          value: existingHako,
+        ),
+      );
+
+      expect(tester.takeException(), isAssertionError);
+      existingHako.dispose();
+    });
+  });
+
+  group('KondoProvider assertions and lazy evaluation', () {
+    testWidgets(
+        'throws AssertionError when used outside MultiProvider without builder or child',
+        (tester) async {
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>(
+          createHako: (_) => TestKondoHako(),
+        ),
+      );
+
+      expect(tester.takeException(), isAssertionError);
+    });
+
+    testWidgets(
+        'when skipReady is true and lazy is default, does not instantiate hako until read',
+        (tester) async {
+      var createCalled = false;
+      late BuildContext capturedContext;
+
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>(
+          skipReady: true,
+          createHako: (_) {
+            createCalled = true;
+            return TestKondoHako();
+          },
+          builder: (context) {
+            capturedContext = context;
+            return const SizedBox();
+          },
+        ),
+      );
+
+      expect(createCalled, isFalse);
+
+      capturedContext.readHako<TestKondoHako>();
+      expect(createCalled, isTrue);
+    });
+
+    testWidgets(
+        'when skipReady is true and lazy is false, instantiates hako immediately',
+        (tester) async {
+      var createCalled = false;
+
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>(
+          skipReady: true,
+          lazy: false,
+          createHako: (_) {
+            createCalled = true;
+            return TestKondoHako();
+          },
+          builder: (_) => const SizedBox(),
+        ),
+      );
+
+      expect(createCalled, isTrue);
+    });
+
+    testWidgets(
+        'when skipReady is false, lazy is forced to false and instantiates immediately',
+        (tester) async {
+      var createCalled = false;
+
+      await tester.pumpWidget(
+        KondoProvider<TestKondoHako>(
+          skipReady: false,
+          lazy: true, // overridden by !skipReady ? false
+          createHako: (_) {
+            createCalled = true;
+            return TestKondoHako();
+          },
+          builder: (_) => const SizedBox(),
+        ),
+      );
+
+      expect(createCalled, isTrue);
+    });
   });
 }

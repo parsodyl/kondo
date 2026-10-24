@@ -20,9 +20,10 @@ dependencies:
     sdk: flutter
 
   provider: ^6.1.1
-  hako: ^0.0.4
+  hako: ^0.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  hako_test: ^0.0.2

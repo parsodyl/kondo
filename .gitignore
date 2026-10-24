@@ -30,4 +30,5 @@ pubspec.lock
 .dart_tool/
 .packages
 build/
+coverage/
 notes_to_review/
