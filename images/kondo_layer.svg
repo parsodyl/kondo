@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+  <defs>
+    <style>
+      .font-main { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+      .layer-title { font-size: 34px; font-weight: 500; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .pill-text { font-size: 28px; font-weight: 500; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+    </style>
+
+    <!-- Ombra leggera per i layer di sfondo e le pillole -->
+    <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.12" />
+    </filter>
+
+    <!-- Ombra più profonda per il layer Kondo in primo piano -->
+    <filter id="elevated-shadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000000" flood-opacity="0.22" />
+    </filter>
+  </defs>
+
+  <!-- Sfondo Bianco -->
+  <rect width="1200" height="675" fill="#FAFAFA" />
+
+  <g class="font-main">
+    <!-- UI Layer (Top - Azzurro) -->
+    <rect x="270" y="75" width="660" height="190" rx="28" fill="#EBF3FA" stroke="#B8CCE0" stroke-width="2" filter="url(#soft-shadow)" />
+    <text x="600" y="145" class="layer-title">UI Layer</text>
+
+    <!-- Data Layer (Bottom - Ambra) -->
+    <rect x="270" y="410" width="660" height="190" rx="28" fill="#FDF3E1" stroke="#DFC08E" stroke-width="2" filter="url(#soft-shadow)" />
+    <text x="600" y="530" class="layer-title">Data Layer</text>
+
+    <!-- Kondo Layer (Center Elevated - Verde) -->
+    <rect x="225" y="198" width="750" height="260" rx="26" fill="#E6F4EA" stroke="#85B893" stroke-width="2.5" filter="url(#elevated-shadow)" />
+    <text x="600" y="252" class="layer-title">Kondo</text>
+
+    <!-- Pill: Interactor -->
+    <rect x="258" y="295" width="214" height="82" rx="41" fill="#FFFFFF" stroke="#85B893" stroke-width="2" filter="url(#soft-shadow)" />
+    <text x="365" y="338" class="pill-text">Interactor</text>
+
+    <!-- Pill: Hako -->
+    <rect x="493" y="295" width="214" height="82" rx="41" fill="#FFFFFF" stroke="#85B893" stroke-width="2" filter="url(#soft-shadow)" />
+    <text x="600" y="338" class="pill-text">Hako</text>
+
+    <!-- Pill: Reactor -->
+    <rect x="728" y="295" width="214" height="82" rx="41" fill="#FFFFFF" stroke="#85B893" stroke-width="2" filter="url(#soft-shadow)" />
+    <text x="835" y="338" class="pill-text">Reactor</text>
+  </g>
+</svg>

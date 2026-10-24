@@ -18,7 +18,7 @@ gracefully into adjacent layers.
 
 <br/>
 <p align="center">
-  <img alt="The Kondo Layer fades gracefully between the UI layer and the Data layer." src="https://raw.githubusercontent.com/parsodyl/kondo/main/images/kondo_layer.png" title="Kondo Layer"/>
+  <img alt="The Kondo Layer fades gracefully between the UI layer and the Data layer." src="https://raw.githubusercontent.com/parsodyl/kondo/main/images/kondo_layer.svg?sanitize=true" title="Kondo Layer"/>
 </p>
 
 ---
@@ -76,7 +76,7 @@ The following diagram illustrates the flow of data and interactions within the K
 
 <br/>
 <p align="center">
-  <img alt="The Kondo Triad components and their interactions across architectural layers." src="https://raw.githubusercontent.com/parsodyl/kondo/main/images/kondo_triad_diagram.png" title="Kondo Triad Architecture"/>
+  <img alt="The Kondo Triad components and their interactions across architectural layers." src="https://raw.githubusercontent.com/parsodyl/kondo/main/images/kondo_triad_diagram.svg?sanitize=true" title="Kondo Triad Architecture"/>
 </p>
 <br/>
 
