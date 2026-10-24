@@ -27,7 +27,7 @@ The state is transient—it dies when this portion of the widget tree is removed
 
 * **Examples:** Selected tab index in a shell, current user profile summary displayed in a shared app bar, active filter applied across sibling list views, "editing mode" toggle that affects multiple child panels.
 * **Lifetime:** Widget subtree lifecycle (e.g., the shell route's lifetime).
-* **Who accesses it:** Child features receive the ancestor's data as **constructor parameters** when their Hako is created. Inside the child's own widgets, the standard `context.watchHakoState` pattern is used to read from the child's Hako (which now holds that data as its own Feature State).
+* **Who accesses it:** Child features receive the ancestor's data as **constructor parameters** when their Triad is created. Inside the child's own widgets, the standard `context.watchHakoState` pattern is used to read from the child's Hako (which now holds that data as its own Feature State).
 * **Rule:** If removing *this* feature should also destroy the state, but multiple *child* features depend on it, it belongs here.
 
 #### 3. 🍃 Leaf Hako (Local / Transient)
@@ -70,7 +70,7 @@ When you encounter a new piece of state, walk through these questions in order:
 → No: Continue.
 
 **Q4: Does this feature need to *react* to a Repository-level change?**
-→ Yes: The **source of truth** stays in the Repository. The Leaf Hako's Interactor exposes a stream, and the Hako uses `connectStream` to create a **local projection** of that data as Feature State.
+→ Yes: The **source of truth** stays in the Repository. The Leaf Hako's Interactor exposes a stream, and the Hako uses `mapStream` (or `connectStream`) to create a **local projection** of that data as Feature State.
 → No: **Leaf Hako.** The state is purely local.
 
 > **Note:** Q4 is the most commonly misunderstood step. The answer is *not* "put it in the Repository." The answer is: the Repository holds the **truth**, but the Hako holds a **projection** of that truth, shaped for its specific UI section. The Interactor transforms; the Hako binds.
@@ -107,7 +107,7 @@ Widget build(BuildContext context) {
 
 The anti-pattern occurs when developers attempt to pass **volatile, dynamic parent state snapshots** down through child constructors inside the *same persistent view*, expecting child Hakos to continuously re-synchronize.
 
-Even worse is creating **competing update paths**: when the parent projects Repository data via `connectStream`, passes that data down through a child constructor, and the child also subscribes to the same Repository stream via its own `connectStream`:
+Even worse is creating **competing update paths**: when the parent projects Repository data via `mapStream` (or `connectStream`), passes a snapshot of that data down through a child constructor, and the child also subscribes to the same Repository stream:
 
 ```dart
 // ❌ Anti-pattern: Two competing update paths for the same data
@@ -116,8 +116,9 @@ class PlaylistHako extends IRKondoHako<PlaylistInteractor, PlaylistReactor> {
   PlaylistHako(...) : super((register) {
     register(const PlaylistContentState());
   }) {
-    connectStream<PlaylistContentState>(
-      stream: interactor.getPlaylistStream().map(PlaylistContentState.fromDomain),
+    mapStream<Playlist, PlaylistContentState>(
+      stream: interactor.getPlaylistStream(),
+      mapper: (_, playlist) => PlaylistContentState.fromDomain(playlist),
     );
   }
 }
@@ -128,8 +129,9 @@ class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor
     register(SongHeaderState.fromDomain(song));
   }) {
     // 💥 Competing update paths: constructor snapshot vs live stream updates!
-    connectStream<SongHeaderState>(
-      stream: interactor.getSongStream(song.id).map(SongHeaderState.fromDomain),
+    mapStream<Song, SongHeaderState>(
+      stream: interactor.getSongStream(song.id),
+      mapper: (_, song) => SongHeaderState.fromDomain(song),
     );
   }
 
@@ -138,22 +140,33 @@ class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor
 ```
 
 **The Canonical Kondo Rule:**
-- **Initial Setup / Swapped Sections:** Pass **stable identifiers** (`songId`, `userId`) or static configuration via the constructor.
-- **Live Reactive Updates:** Let the feature subscribe to its own projection of the Repository stream via `connectStream`.
+- **Initial Setup / Swapped Sections:** Pass **stable identifiers** (`songId`, `userId`) or static configuration into the **Interactor** constructor when mounting the child feature.
+- **Live Reactive Updates:** Let the feature's Hako subscribe to its own projection of the Repository stream via `mapStream` (or `connectStream`).
 
 ```dart
-// ✅ Canonical: Pass only stable identifiers; subscribe to live streams independently
+// ✅ Canonical: Pass stable identifiers to the Interactor; Hako subscribes to the stream
+class SongDetailInteractor {
+  SongDetailInteractor(this.songId, this.songRepository);
+
+  final String songId;
+  final SongRepository songRepository;
+
+  Stream<Song> getSongStream() => songRepository.watchSongById(songId);
+}
+
 class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor> {
-  SongDetailHako({required this.songId, ...}) : super((register) {
+  SongDetailHako({
+    required super.interactor,
+    required super.reactor,
+  }) : super((register) {
     register(const SongHeaderState());
   }) {
     // Single, clean update path: the feature owns its live stream projection
-    connectStream<SongHeaderState>(
-      stream: interactor.getSongStream(songId).map(SongHeaderState.fromDomain),
+    mapStream<Song, SongHeaderState>(
+      stream: interactor.getSongStream(),
+      mapper: (_, song) => SongHeaderState.fromDomain(song),
     );
   }
-
-  final String songId;
 }
 ```
 
@@ -161,11 +174,11 @@ class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor
 
 | Data Need | Canonical Approach | Rationale |
 |---|---|---|
-| New screen or swapped tab/section | **Constructor parameter** (`id`, static config) | Feature is mounted fresh with initial parameters |
-| Live, reactive data updates | **`connectStream` projection** via Interactor | Feature owns its own live data lifecycle |
+| New screen or swapped tab/section | **Interactor constructor parameter** (`id`, static config) | Feature is mounted fresh with initial parameters |
+| Live, reactive data updates | **`mapStream` / `connectStream` projection** via Interactor | Feature owns its own live data lifecycle |
 | Local UI interaction state | **`set<T>()` internally** | Feature state managed locally in the Hako |
 
-**The Rule:** Avoid passing mutable parent state snapshots down child constructors. Pass stable identifiers at mount time, and let features subscribe to live streams independently.
+**The Rule:** Avoid passing mutable parent state snapshots down child constructors. Pass stable identifiers to the child's Interactor at mount time, and let features subscribe to live streams independently.
 
 ---
 
@@ -185,7 +198,7 @@ A notification badge appears in the bottom navigation bar *and* inside a notific
   * *Owner:* Each Hako creates its own **local projection** from the same Repository stream.
   * *Why:* The *shape* of the data differs per feature (a badge string vs. a list of items), but the *source* is shared.
 
-**The Rule:** When multiple features display the *same truth* differently, the Repository holds the truth and each Leaf Hako projects its own view via `connectStream`. Do **not** hoist a "shared display state" into an Ancestor Hako unless the ancestor itself needs to orchestrate based on it.
+**The Rule:** When multiple features display the *same truth* differently, the Repository holds the truth and each Leaf Hako projects its own view via `mapStream` or `connectStream`. Do **not** hoist a "shared display state" into an Ancestor Hako unless the ancestor itself needs to orchestrate based on it.
 
 #### 2. The Tab Selection 🗂️
 
@@ -214,9 +227,9 @@ A user can "favorite" a song. The heart icon appears on the song detail screen, 
 
 * **Scenario B: The Local Reflections**
   Each feature subscribes independently via its own Interactor.
-  * *Song Detail Hako:* `connectStream` maps `FavoritesRepository.isFavorited(songId)` into `SongHeaderState(isFavorited: ...)`.
-  * *Playlist Hako:* `connectStream` maps the full favorites list into each `PlaylistItemState`.
-  * *Player Bar Hako:* `connectStream` maps the current track's favorite status into `NowPlayingState`.
+  * *Song Detail Hako:* `mapStream` maps `FavoritesRepository.isFavorited(songId)` into `SongHeaderState(isFavorited: ...)`.
+  * *Playlist Hako:* `mapStream` maps the full favorites list into each `PlaylistItemState`.
+  * *Player Bar Hako:* `mapStream` maps the current track's favorite status into `NowPlayingState`.
 
 **The Rule:** When siblings need the same truth, they each subscribe independently to the Repository. Do **not** create an Ancestor Hako just to "broadcast" the favorite state downward—that's the Repository's job.
 
@@ -273,7 +286,7 @@ class SongDetailHako extends IRKondoHako<SongDetailInteractor, SongDetailReactor
 
 ### An Important Note: Projections Are Not Duplication ⚠️
 
-A common concern: "If three Leaf Hakos each `connectStream` the same Repository data, isn't that state duplication?"
+A common concern: "If three Leaf Hakos each subscribe (`mapStream` / `connectStream`) to the same Repository data, isn't that state duplication?"
 
 **No.** Each Hako holds a **projection**—a view-specific transformation of the shared truth. The Repository holds `List<FavoriteSong>`. One Hako holds `SongHeaderState(isFavorited: true)`. Another holds `PlaylistState(items: [...])`. These are different shapes serving different UI sections.
 
